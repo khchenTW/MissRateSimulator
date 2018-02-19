@@ -24,9 +24,10 @@ def main():
         for por, fr in enumerate(faultRate):
             for uti in utilization:
                 fileInput=taskSetInput(uti, fr, por, tasksets_amount, part)
-                #print np.load(fileInput+'.npy')
+                print "Generate Task sets:"
+                print np.load(fileInput+'.npy')
     elif mode == 1:
-        #use to quickly get emr
+        #use to quickly get emr without simulation
         for por, fr in enumerate(faultRate):
             for uti in utilization:
                 experiments_emr(por, fr, uti,'inputs/'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_'+str(part))
@@ -36,7 +37,7 @@ def main():
             for uti in utilization:
                 experiments_sim(por, fr, uti,'inputs/'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_'+str(part))
     elif mode == 3:
-        #use to get sim results together with emr
+        #use to get the relationship between phi and phi*i to show the converage.
         for por, fr in enumerate(faultRate):
             for uti in utilization:
                 trendsOfPhiMI(por, fr, uti,'inputs/'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_'+str(part))

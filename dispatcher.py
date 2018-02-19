@@ -10,6 +10,7 @@ import TDA
 import EPST
 import timing
 import cprta
+from bounds import *
 
 # for configurations
 h = 0
@@ -308,7 +309,7 @@ def lookup(k, tasks, numDeadline, mode):
     #due to array design, numDeadline
         if lookupTable[k][numDeadline] == -1:
         #calcualte
-            lookupTable[k][numDeadline] = EPST.probabilisticTest_k(k, tasks, numDeadline, 1)
+            lookupTable[k][numDeadline] = EPST.probabilisticTest_k(k, tasks, numDeadline, Chernoff_bounds, 1)
             #print EPST.probabilisticTest_k(k, tasks, numDeadline, 1)
             #print cprta.cprtao(tasks, numDeadline)
         return lookupTable[k][numDeadline]
@@ -322,13 +323,13 @@ def lookup(k, tasks, numDeadline, mode):
 
 def test(k, tasks):
     print tasks[k]
-    print EPST.probabilisticTest_p(tasks, 1, 3)
-    print EPST.probabilisticTest_k(k, tasks, 1, 3)
-    print EPST.probabilisticTest_k(k, tasks, 2, 3)
-    print EPST.probabilisticTest_k(k, tasks, 3, 3)
+    print EPST.probabilisticTest_p(tasks, 1, Chernoff_bounds, 1)
+    print EPST.probabilisticTest_k(k, tasks, 1, Chernoff_bounds, 1)
+    print EPST.probabilisticTest_k(k, tasks, 2, Chernoff_bounds, 1)
+    print EPST.probabilisticTest_k(k, tasks, 3, Chernoff_bounds, 1)
     probsum = 0
     for x in range(1, sumbound+1):
-        probsum += EPST.probabilisticTest_k(k, tasks, x, 3)*x
+        probsum += EPST.probabilisticTest_k(k, tasks, x, Chernoff_bounds, 1)*x
     print probsum
 
 def experiments_sim(por, fr, uti, inputfile ):
@@ -419,13 +420,15 @@ def experiments_emr(por, fr, uti, inputfile ):
     ExpectedMissRate = []
     for tasks in tasksets:
         #print tasks
+        #global eventList
+
         global statusTable
-        global eventList
-        global lookupTable
-        #global conlookupTable
         statusTable = [[0 for x in range(4)] for y in range(n)]
 
+        global lookupTable
         lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
+
+        #global conlookupTable
         #conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
 
         ExpectedMissRate.append(Approximation(sumbound, n-1, tasks, 0))
@@ -449,7 +452,7 @@ def trendsOfPhiMI(por, fr, uti, inputfile):
         Results = []
         IResults = []
         for x in range(1, 11):
-            r = EPST.probabilisticTest_k(n-1, tasks, x, 1)
+            r = EPST.probabilisticTest_k(n-1, tasks, x, Chernoff_bounds, 1)
             IResults.append(r*x)
             Results.append(r)
             print r
