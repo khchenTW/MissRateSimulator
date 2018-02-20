@@ -4,21 +4,20 @@ import numpy as np
 import timing
 
 faultRate = [10**-4]
-#faultRate = [10**0]
+# this list is used to generate a readible name of output.
 power = [4]
-h = 0
-n = 10
-sumbound = 3 #old setup for J'
 utilization = [75]
-#hardTaskFactor = [2.2/1.2]
 
 def main():
     args = sys.argv
     if len(args) < 4:
-        print "Usage: python experiments.py [mode] [count] [idx]"
+        print "Usage: python experiments.py [mode] [tasksets_amount] [part]"
         return -1
+    # this is used to choose the types of experiments.
     mode = int(args[1])
+    # this is used to generate the number of sets you want to test / load the cooresponding input file.
     tasksets_amount = int(args[2])
+    # this is used to identify the experimental sets once the experiments running in parallel.
     part = int(args[3])
     if mode == 0:
         for por, fr in enumerate(faultRate):

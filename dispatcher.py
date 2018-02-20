@@ -71,6 +71,7 @@ def taskSetInput(uti, fr, por, tasksets_amount, part):
 
 
 """
+The status table for the simulator
 per col with 4 rows:
 workload
 # of release
@@ -242,7 +243,7 @@ def initState( tasks ):
         eventList.append(eventClass(0,0,idx))
 
 def dispatcher( targetedNumber, fr):
-    # when the number of released jobs in the lowest priority task is not equal to the targeted number.
+    # Stop when the number of released jobs in the lowest priority task is not equal to the targeted number.
 
     while( targetedNumber != numDeadlines( n - 1 )):
         if len(eventList) == 0:

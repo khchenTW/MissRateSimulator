@@ -1,5 +1,6 @@
 '''
-Author Kevin Huang and Georg von der Brueggen
+Author Kevin Huang, Georg von der Brueggen and Kuan-Hsun Chen
+The UUniFast / UUniFast_discard generator.
 
 '''
 
@@ -69,27 +70,4 @@ def taskGeneration_p(numTasks,uTotal):
     print >>fo, json.dumps(PSet)
     return PSet
 
-def taskGenerationMatlab(numTasks, uTotal, ind):
-    global ofile, PSet
-    random.seed()
-    init()
-    UUniFast(numTasks,uTotal/100)
-    CSet_generate(1,2)
-    ofile = "taskset-matlab.m"
-    PSet = mixed_task_builder.hardtaskWCET(PSet, 1.83, 10**-6.)
-    fo = open(ofile, "ab")
-    fo.write("if index == "+str(ind)+"\n")
-    j = 0
-    for i in PSet:
-        j+=1
-        fo.write("taskSet{"+str(j)+"}{1} = ["+str(i['execution'])+","+str(i['abnormal_exe'])+";0.999999, 0.000001];\n")
-        fo.write("taskSet{"+str(j)+"}{2} = ["+str(i['period'])+"; 1];\n")
-    fo.write("end\n")
-    ofile = "taskset-p.txt"
-    fo = open(ofile, "ab")
-    print >>fo, json.dumps(PSet)
-
-def taskGenerationMatlabX(numTasks, uTotal, j):
-    for i in range(j):
-        taskGenerationMatlab(numTasks, uTotal, i)
 

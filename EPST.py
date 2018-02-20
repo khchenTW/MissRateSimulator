@@ -8,6 +8,7 @@ from sympy import *
 from bounds import *
 
 def determineWorkload(task, higherPriorityTasks, criteria, time):
+    # This function is used to accumulate the workload from each task.
     workload = task[criteria]
     for i in higherPriorityTasks:
         jobs = math.ceil(time / i['period'])
@@ -15,8 +16,9 @@ def determineWorkload(task, higherPriorityTasks, criteria, time):
         #print("jobs " + repr(jobs) + " wl task " + repr(jobs * i[criteria]) + " total workload " + repr(workload))
     return workload
 
+def ktda_p(task, higherPriorityTasks, criteria, ieq, bound):
+    # This function is used to report a upper bound of the probability for one deadline miss
 
-def ktda_p(task, higherPriorityTasks, criteria, ieq, bound): #only for one deadline miss
     kpoints = []
     # pick up k testing points here
     for i in higherPriorityTasks:
@@ -51,6 +53,8 @@ def ktda_p(task, higherPriorityTasks, criteria, ieq, bound): #only for one deadl
     return minP
 
 def ktda_k(task, higherPriorityTasks, criteria, window, ieq, bound):
+    # This function is used to report a upper bound of the probability for multiple deadline misses
+
     kpoints = []
     # pick up k testing points here
     if window != 1:
@@ -68,12 +72,6 @@ def ktda_k(task, higherPriorityTasks, criteria, window, ieq, bound):
         kpoints.append(task['period'])
 
 
-    '''
-    kpoints.sort()
-    if len(higherPriorityTasks) == 9:
-        print "dtda_points:\n"
-        print kpoints
-    '''
     # for loop checking k points time
     minP = 1.
     for t in kpoints:
@@ -85,8 +83,10 @@ def ktda_k(task, higherPriorityTasks, criteria, window, ieq, bound):
 
         if ieq == Chernoff_bounds:
             try:
-                res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='bounded', bounds=[0,bound]) #find the x with minimum
-                probRes = ieq(task, higherPriorityTasks, fy, res.x) #use x to find the minimal
+                #find the x with minimum
+                res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='bounded', bounds=[0,bound])
+                #use x to find the minimal
+                probRes = ieq(task, higherPriorityTasks, fy, res.x)
             except TypeError:
                 print "TypeError"
                 probRes = 1
