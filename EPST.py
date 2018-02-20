@@ -37,7 +37,9 @@ def ktda_p(task, higherPriorityTasks, criteria, ieq, bound):
         fy = float(t)
         if ieq == Chernoff_bounds:
             try:
-                res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='bounded', bounds=[0,bound])
+                res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='brent', bounds=[0,bound])
+                #res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='bounded', bounds=[0,bound])
+                #res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='golden', bounds=[0,bound])
                 probRes = ieq(task, higherPriorityTasks, fy, res.x)
             except TypeError:
                 print "TypeError"

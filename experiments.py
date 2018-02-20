@@ -137,17 +137,14 @@ def experiments_sim(por, fr, uti, inputfile):
     tasksets = np.load(inputfile+'.npy')
 
     for tasks in tasksets:
-        #print tasks
         global lookupTable
         global conlookupTable
 
         simulator=MissRateSimulator(n, tasks)
-        #simulator.initState(tasks)
-        #tmptasks = tasks[:]
 
         # EPST + Theorem2
         # Assume the lowest priority task has maximum...
-        """
+
         lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
         conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
 
@@ -157,16 +154,13 @@ def experiments_sim(por, fr, uti, inputfile):
         else:
             ExpectedMaxRate.append(tmp)
             ConMissRate.append(Approximation(sumbound, n-1, tasks, 1))
-        """
 
-        #timing.tlog_start("simulator starts", 1)
+
+        timing.tlog_start("simulator starts", 1)
         simulator.dispatcher(jobnum, fr)
         MaxRateList.append(simulator.missRate(n-1))
-        #timing.tlog_end("simulator finishes", simulator.stampSIM, 1)
+        timing.tlog_end("simulator finishes", simulator.stampSIM, 1)
 
-        #totalRateList.append(totalMissRate())
-
-        #tableReport()
     print "Result for fr"+str(power[por])+"_uti"+str(uti)
     print "MaxRateList:"
     print MaxRateList
