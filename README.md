@@ -1,7 +1,7 @@
 # Event-based Miss Rate Simulator
 
 # Description of the adopted files from [1]:
-- EPST.py contains the .
+- EPST.py contains the analyses of the upper bound of the deadline misses.
 - bounds.py contains different bounds related to the Chernoff bound.
 - task-generator.py contains the task generating routines.
 - sort_task_set.py contains the task generating routines.
@@ -20,8 +20,7 @@
 - "python experiements.py 3 1 0", Shows the trends of \phi_{k,j}, where j in 1 to 10.
 
 # Experimental setups in the paper:
-- TBD
-- TBD
+- All the results are statically stored in each ploter in "printer" folder
 - TBD
 
 # Reference
