@@ -1,6 +1,6 @@
 from __future__ import division
 from bounds import *
-import dispatcher
+from dispatcher import MissRateSimulator
 import sys
 import numpy as np
 import timing
@@ -11,14 +11,16 @@ import task_generator
 import mixed_task_builder
 
 
-faultRate = [10**-4]
+#faultRate = [10**-4]
+#faultrate must be at least 1
+faultRate = [0]
 hardTaskFactor = [2.2/1.2]
 n = 2
 # this list is used to generate a readible name of output.
 power = [4]
-utilization = [75]
+utilization = [30]
 sumbound = 4
-jobnum = 20
+jobnum = 2
 lookupTable = [[-1 for x in range(sumbound+3)] for y in range(n)]
 conlookupTable = [[-1 for x in range(sumbound+3)] for y in range(n)]
 
@@ -137,32 +139,31 @@ def experiments_sim(por, fr, uti, inputfile):
 
     for tasks in tasksets:
         #print tasks
-        global statusTable
-        global eventList
-        global lookupTable
-        global tmptasks
+        global lookupTable        
         global conlookupTable
-        statusTable = [[0 for x in range(4)] for y in range(n)]
-        eventList = []
-
-        lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
-        conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
-        initState(tasks)
-        tmptasks = tasks[:]
+                  
+        simulator=MissRateSimulator(n, tasks)      
+        #simulator.initState(tasks)
+        #tmptasks = tasks[:]
 
         # EPST + Theorem2
         # Assume the lowest priority task has maximum...
+        """
+        lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
+        conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]        
+        
         tmp = Approximation(sumbound, n-1, tasks, 0)
         if tmp < 10**-4:
             continue
         else:
             ExpectedMaxRate.append(tmp)
             ConMissRate.append(Approximation(sumbound, n-1, tasks, 1))
+        """
 
-        timing.tlog_start("simulator starts", 1)
-        dispatcher(jobnum, fr)
-        MaxRateList.append(missRate(n-1))
-        timing.tlog_end("simulator finishes", stampSIM, 1)
+        #timing.tlog_start("simulator starts", 1)
+        simulator.dispatcher(jobnum, fr)
+        MaxRateList.append(simulator.missRate(n-1))
+        #timing.tlog_end("simulator finishes", simulator.stampSIM, 1)
 
         #totalRateList.append(totalMissRate())
 
@@ -215,8 +216,8 @@ def experiments_emr(por, fr, uti, inputfile ):
         #print tasks
         #global eventList
 
-        global statusTable
-        statusTable = [[0 for x in range(4)] for y in range(n)]
+        #global statusTable
+        #statusTable = [[0 for x in range(4)] for y in range(n)]
 
         global lookupTable
         lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]

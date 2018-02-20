@@ -4,198 +4,229 @@ import math
 import numpy as np
 import operator
 
-# for configurations
-h = 0
-n = 2
 # for simulator initialization
-statusTable = [[0 for x in range(4)] for y in range(n)]
-eventList = []
-tasks = []
-stampSIM = []
-tmptasks = []
+class MissRateSimulator:
+    def __init__( self, n, tasks ):
+        self.statusTable = [[0 for x in range(4)] for y in range(n)]
+        self.eventList = []
+        self.tasks = tasks
+        self.stampSIM = []
+        self.h = 0
+        self.n = n    
+        self.initState()
+    
+    class eventClass( object ):
+        # This is the class of events
+        def __init__( self, case, delta, idx ):
+            self.eventType = case
+            self.delta = delta
+            self.idx = idx
 
-"""
-The status table for the simulator
-per col with 4 rows:
-workload
-# of release
-# of misses
-# of deadlines = this should be less than release
-"""
-def tableReport():
-    for i, e in enumerate(eventList):
-        print "Event "+str(i)
-        print e.case()
-        print e.delta
-    print
-    for x in range(n):
-        print "task"+str(x)+": "
-        for y in range(4):
-            print statusTable[x][y]
-    print
+        def case(self):
+            if self.eventType == 0:
+                return "release"
+            else:
+                return "deadline"
 
-class eventClass( object ):
-    def __init__(self, case, delta, idx):
-        self.eventType = case
-        self.delta = delta
-        self.idx = idx
+        def updateDelta( self, elapsedTime ):
+            self.delta = self.delta - elapsedTime        
+    """
+    The status table for the simulator
+    per col with 4 rows:
+    workload
+    # of release
+    # of misses
+    # of deadlines = this should be less than release
+    """
+    def tableReport( self ):
+        for i, e in enumerate(self.eventList):
+            print "Event "+str(i)+" from task "+str(e.idx)            
+            print e.case()
+            print e.delta
 
-    def case(self):
-        if self.eventType == 0:
-            return "release"
+        print
+        for x in range(self.n):
+            print "task"+str(x)+": "
+            for y in range(4):
+                print self.statusTable[x][y]
+        print
+
+    def findTheHighestWithWorkload( self ):
+        # if there is no workload in the table, returns -1
+        hidx = -1
+        for i in range(self.n):
+            if self.statusTable[i][0] != 0:
+                hidx = i
+                break
+            else:
+                pass
+        return hidx
+
+    def release( self, idx, fr ):        
+        # create deadline event to the event list
+        #print "Add deadline event for "+str(idx)
+        #print idx
+        #print self.tasks[idx]['deadline']
+        self.eventList.append(self.eventClass(1, self.tasks[idx]['deadline'], idx))
+        # create release event to the event list
+        #print "Add release event for "+str(idx)
+        # sporadic randomness
+        #spor=self.tasks[idx]['period']+self.tasks[idx]['period']*random.randint(0,20)/100
+        #eventList.append(eventClass(0, spor, idx))
+        # periodic setup
+        self.eventList.append(self.eventClass(0, self.tasks[idx]['period'], idx))
+
+        # sort the eventList
+        self.eventList = sorted(self.eventList, key=operator.attrgetter('delta'))
+
+        # add the workload to the table corresponding entry
+        # fault inject
+
+        
+        #if random.randint(0,int(1/fr))>int(1/fr)-1:
+        if fr == 0:
+            self.statusTable[ idx ][ 0 ] += self.tasks[idx]['execution']
+        elif fr == 1:
+            self.statusTable[ idx ][ 0 ] += self.tasks[idx]['abnormal_exe']
         else:
-            return "deadline"
+            print "com " + str(int(1/fr)-1)
+            print random.randint(0,int(1/fr)-1)
+            print int(1/fr)-2            
+            if random.randint(0,int(1/fr)-1)>int(1/fr)-2:
+                self.statusTable[ idx ][ 0 ] += self.tasks[idx]['abnormal_exe']
+            else:
+                self.statusTable[ idx ][ 0 ] += self.tasks[idx]['execution']
+        
+        #statusTable[ idx ][ 0 ] += tasks[idx]['execution']
 
-    def updateDelta(self, elapsedTime):
-        self.delta = self.delta - elapsedTime
-
-def findTheHighestWithWorkload():
-    # if there is no workload in the table, returns -1
-    hidx = -1
-    for i in range(n):
-        if statusTable[i][0] != 0:
-            hidx = i
-            break
-        else:
-            pass
-    return hidx
-
-def release( idx, fr):
-    global h
-    global eventList
-    # create deadline event to the event list
-    #print "Add deadline event for "+str(idx)
-    eventList.append(eventClass(1, tmptasks[idx]['deadline'], idx))
-    # create release event to the event list
-    #print "Add release event for "+str(idx)
-    # sporadic randomness
-    #spor=tmptasks[idx]['period']+tmptasks[idx]['period']*random.randint(0,20)/100
-    #eventList.append(eventClass(0, spor, idx))
-    # periodic setup
-    eventList.append(eventClass(0, tmptasks[idx]['period'], idx))
-
-    # sort the eventList
-    eventList = sorted(eventList, key=operator.attrgetter('delta'))
-
-    # add the workload to the table corresponding entry
-    # fault inject
-
-    if random.randint(0,int(1/fr))>int(1/fr)-1:
-        statusTable[ idx ][ 0 ] += tmptasks[idx]['abnormal_exe']
-    else:
-        statusTable[ idx ][ 0 ] += tmptasks[idx]['execution']
-
-    #statusTable[ idx ][ 0 ] += tasks[idx]['execution']
-
-    # decide the highest priority task in the system
-    h = findTheHighestWithWorkload()
-    if h == -1:
-        print "BUG: after release, there must be at least one task with workload."
-    statusTable[ idx ][ 1 ]+=1
-    #tableReport()
-
-def deadline( idx, fr ):
-    # check if the targeted task in the table has workload.
-    if workload( idx ) != 0:
-        statusTable[ idx ][ 2 ] += 1
-    statusTable[ idx ][ 3 ]+=1
-    #tableReport()
-    # DAC18, if there is no backlog in the lowest priority task, init the simulator again.
-    if idx == len(tmptasks)-1 and workload( idx ) == 0:
-        eventList = []
-        initState(tasks)
-
-
-def event_to_dispatch( event, fr ):
-    # take out the delta from the event
-    elapsedTime( event )
-
-    # execute the corresponding event functions
-    switcher = {
-        0: release,
-        1: deadline,
-    }
-    func = switcher.get( event.eventType, lambda: "ERROR" )
-    # execute the event
-    func( event.idx, fr )
-
-
-def elapsedTime( event ):
-    global h
-    delta = event.delta
-    # update the deltas of remaining events in the event list.
-    if len(eventList) == 0:
-        print "BUG: there is no event in the list to be updated."
-    for e in eventList:
-        e.updateDelta( delta )
-    # update the workloads in the table
-    while (delta):
+        # decide the highest priority task in the system
+        h = self.findTheHighestWithWorkload()
         if h == -1:
-            # processor Idle
-            delta = 0
-        elif delta >= statusTable[h][0]:
-            delta = delta - statusTable[h][0]
-            statusTable[ h ][ 0 ] = 0
-            h = findTheHighestWithWorkload()
-        elif delta < statusTable[h][0]:
-            statusTable[ h ][ 0 ] -= delta
-            delta = 0
+            print "BUG: after release, there must be at least one task with workload."
+        self.statusTable[ idx ][ 1 ]+=1
+        print "Table in task"+str(idx)+" release event"
+        self.tableReport()
 
-def getNextEvent():
-    # get the next event from the event list
-    event = eventList.pop(0)
-    #print "Get Event: "+event.case() + " from " + str(event.idx)
-    return event
+    def deadline( self, idx, fr ):
+        # check if the targeted task in the table has workload.
+        if self.workload( idx ) != 0:
+            print "task"+str(idx)+" misses deadline"
+            self.statusTable[ idx ][ 2 ] += 1
+        self.statusTable[ idx ][ 3 ]+=1
+
+        print "Table in task"+str(idx)+" deadline event"
+        self.tableReport()        
+        
+        #If there is no backlog in the lowest priority task, 
+        #init the simulator again to force the worst release pattern.
+        #TODO this should be done in the release of higher priority task
+        if idx == len(self.tasks)-1 and self.workload( idx ) == 0:
+            #print "Relase the worst pattern"
+            self.eventList = []
+
+            self.initState()
+        
+        
+
+    def event_to_dispatch( self, event, fr ):
+        # take out the delta from the event
+        self.elapsedTime( event )
+
+        # execute the corresponding event functions
+        switcher = {
+            0: self.release,
+            1: self.deadline,
+        }
+        func = switcher.get( event.eventType, lambda: "ERROR" )
+        # execute the event
+        func( event.idx, fr )
 
 
-def missRate(idx):
-    # return the miss rate of task idx
-    return statusTable[ idx ][ 2 ] / statusTable[ idx ][ 1 ]
+    def elapsedTime( self, event ):    
+        delta = event.delta
+        # update the deltas of remaining events in the event list.
+        if len(self.eventList) == 0:
+            print "BUG: there is no event in the list to be updated."
+        for e in self.eventList:
+            e.updateDelta( delta )
+        # update the workloads in the table
+        while (delta):
+            if self.h == -1:
+                # processor Idle
+                delta = 0
+            elif delta >= self.statusTable[self.h][0]:
+                delta = delta - self.statusTable[self.h][0]
+                self.statusTable[ self.h ][ 0 ] = 0
+                self.h = self.findTheHighestWithWorkload()
+            elif delta < self.statusTable[self.h][0]:
+                self.statusTable[ self.h ][ 0 ] -= delta
+                delta = 0
 
-def totalMissRate():
-    # return the total miss rate of the system
-    sumRelease = 0
-    sumMisses = 0
-    for idx in range(n):
-        sumRelease += statusTable[ idx ][ 1 ]
-        sumMisses += statusTable[ idx ][ 2 ]
-    return sumMisses/sumRelease
+    def getNextEvent(self):
+        # get the next event from the event list
+        event = self.eventList.pop(0)
+        #print "Get Event: "+event.case() + " from " + str(event.idx)
+        return event
 
-def releasedJobs( idx ):
-    # return the number of released jobs of idx task in the table
-    # print "Released jobs of " + str(idx) + " is " + str(statusTable[ idx ][ 1 ])
-    return statusTable[ idx ][ 1 ]
 
-def numDeadlines( idx ):
-    # return the number of released jobs of idx task in the table
-    # print "Deadlines of " + str(idx) + " is " + str(statusTable[ idx ][ 1 ])
-    return statusTable[ idx ][ 3 ]
+    def missRate( self, idx):
+        # return the miss rate of task idx              
+        return self.statusTable[ idx ][ 2 ] / self.statusTable[ idx ][ 1 ]
 
-def releasedMisses( idx ):
-    # return the number of misses of idx task in the table
-    return statusTable[ idx ][ 2 ]
+    def totalMissRate( self ):
+        # return the total miss rate of the system
+        sumRelease = 0
+        sumMisses = 0
+        for idx in range(n):
+            sumRelease += self.statusTable[ idx ][ 1 ]
+            sumMisses += self.statusTable[ idx ][ 2 ]
+        return sumMisses/sumRelease
 
-def workload( idx ):
-    # return the remaining workload of idx task in the table
-    return statusTable[ idx ][ 0 ]
+    def releasedJobs( self, idx ):
+        # return the number of released jobs of idx task in the table
+        # print "Released jobs of " + str(idx) + " is " + str(statusTable[ idx ][ 1 ])
+        return self.statusTable[ idx ][ 1 ]
 
-def initState( tasks ):
-    # task release together at 0 without delta / release from the lowest priority task
-    tmp=range(len(tasks))
-    tmp = tmp[::-1]
-    for idx in tmp:
-        eventList.append(eventClass(0,0,idx))
+    def numDeadlines( self, idx ):
+        # return the number of past deadlines of idx task in the table
+        # print "Deadlines of " + str(idx) + " is " + str(statusTable[ idx ][ 1 ])
+        return self.statusTable[ idx ][ 3 ]
 
-def dispatcher( targetedNumber, fr):
-    # Stop when the number of released jobs in the lowest priority task is not equal to the targeted number.
+    def releasedMisses( self, idx ):
+        # return the number of misses of idx task in the table
+        return self.statusTable[ idx ][ 2 ]
 
-    while( targetedNumber != numDeadlines( n - 1 )):
-        if len(eventList) == 0:
-            print "BUG: there is no event in the dispatcher"
-            break
-        else:
-            event_to_dispatch( getNextEvent(), fr )
+    def workload( self, idx ):
+        # return the remaining workload of idx task in the table
+        return self.statusTable[ idx ][ 0 ]
 
+    def initState( self ):
+        # init
+        print self.tasks
+        self.eventList = [] 
+
+        # task release together at 0 without delta / release from the lowest priority task
+        tmp=range(len(self.tasks))
+        tmp = tmp[::-1]    
+        for idx in tmp:
+            self.statusTable[ idx ][ 0 ] = 0
+            self.statusTable[ idx ][ 3 ] = self.statusTable[ idx ][ 1 ] 
+            self.eventList.append(self.eventClass(0,0,idx))
+        self.tableReport()
+        #print 
+
+    def dispatcher(self, targetedNumber, fr):
+        # Stop when the number of released jobs in the lowest priority task is equal to the targeted number.
+
+        while( targetedNumber != self.numDeadlines( self.n - 1 )):
+            if len(self.eventList) == 0:
+                print "BUG: there is no event in the dispatcher"
+                break
+            else:
+                e = self.getNextEvent()
+                self.event_to_dispatch(e, fr )
+        #print "Stop at task "+str(e.idx)
+        self.tableReport()
 
 
 
