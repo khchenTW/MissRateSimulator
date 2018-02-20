@@ -84,18 +84,11 @@ def lookup(k, tasks, numDeadline, mode):
             #print cprta.cprtao(tasks, numDeadline)
         return conlookupTable[k][numDeadline]
 
-def Approximation(J, k, tasks, mode):
+def Approximation(J, k, tasks, mode=0):
+    # mode 0 == EPST, 1 = CPRTA
     # J is the bound of the idx
     probsum = 0
     for x in range(1, J+1):
-        '''
-        if probsum == probsum + lookup(k, tasks, x, mode)*x:
-            #print "HHHHHH:"+str(x)
-            J = x
-            break
-        else:
-            probsum += lookup(k, tasks, x, mode)*x
-        '''
         probsum += lookup(k, tasks, x, mode)*x
         #print 'mode: '+str(mode)
         #print 'sum:'
@@ -118,13 +111,6 @@ def Approximation(J, k, tasks, mode):
         #for avoiding numerical inconsistance
         return probsum/(1+probsum-lookup(k, tasks, 1, mode))
 
-
-def totalAproxMissRate( J ):
-    # return the total aprox miss rate of the system
-    sumTotal = 0.0
-    for x in range(n):
-        sumTotal+=Approximation(J, x, tasks)
-    return sumTotal/n
 
 def experiments_sim(por, fr, uti, inputfile):
 
