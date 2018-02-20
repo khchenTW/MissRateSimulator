@@ -11,10 +11,10 @@ class MissRateSimulator:
         self.eventList = []
         self.tasks = tasks
         self.stampSIM = []
-        self.h = 0
-        self.n = n    
+        self.h = -1
+        self.n = n
         self.initState()
-    
+
     class eventClass( object ):
         # This is the class of events
         def __init__( self, case, delta, idx ):
@@ -29,7 +29,7 @@ class MissRateSimulator:
                 return "deadline"
 
         def updateDelta( self, elapsedTime ):
-            self.delta = self.delta - elapsedTime        
+            self.delta = self.delta - elapsedTime
     """
     The status table for the simulator
     per col with 4 rows:
@@ -40,7 +40,7 @@ class MissRateSimulator:
     """
     def tableReport( self ):
         for i, e in enumerate(self.eventList):
-            print "Event "+str(i)+" from task "+str(e.idx)            
+            print "Event "+str(i)+" from task "+str(e.idx)
             print e.case()
             print e.delta
 
@@ -62,7 +62,7 @@ class MissRateSimulator:
                 pass
         return hidx
 
-    def release( self, idx, fr ):        
+    def release( self, idx, fr ):
         # create deadline event to the event list
         #print "Add deadline event for "+str(idx)
         #print idx
@@ -82,42 +82,43 @@ class MissRateSimulator:
         # add the workload to the table corresponding entry
         # fault inject
 
-        
+
         #if random.randint(0,int(1/fr))>int(1/fr)-1:
         if fr == 0:
             self.statusTable[ idx ][ 0 ] += self.tasks[idx]['execution']
         elif fr == 1:
             self.statusTable[ idx ][ 0 ] += self.tasks[idx]['abnormal_exe']
         else:
-            print "com " + str(int(1/fr)-1)
-            print random.randint(0,int(1/fr)-1)
-            print int(1/fr)-2            
+            #print "com " + str(int(1/fr)-1)
+            #print random.randint(0,int(1/fr)-1)
+            #print int(1/fr)-2
             if random.randint(0,int(1/fr)-1)>int(1/fr)-2:
                 self.statusTable[ idx ][ 0 ] += self.tasks[idx]['abnormal_exe']
             else:
                 self.statusTable[ idx ][ 0 ] += self.tasks[idx]['execution']
-        
+
         #statusTable[ idx ][ 0 ] += tasks[idx]['execution']
 
         # decide the highest priority task in the system
-        h = self.findTheHighestWithWorkload()
-        if h == -1:
+        self.h = self.findTheHighestWithWorkload()
+        if self.h == -1:
             print "BUG: after release, there must be at least one task with workload."
         self.statusTable[ idx ][ 1 ]+=1
-        print "Table in task"+str(idx)+" release event"
-        self.tableReport()
+        #print "Table in task"+str(idx)+" release event with h"+str(self.h)
+        #self.tableReport()
 
     def deadline( self, idx, fr ):
         # check if the targeted task in the table has workload.
+        #print "Table in task"+str(idx)+" deadline event with h"+str(self.h)
+        #self.tableReport()
         if self.workload( idx ) != 0:
-            print "task"+str(idx)+" misses deadline"
+            #print "task"+str(idx)+" misses deadline"
             self.statusTable[ idx ][ 2 ] += 1
         self.statusTable[ idx ][ 3 ]+=1
+        #print
 
-        print "Table in task"+str(idx)+" deadline event"
-        self.tableReport()        
-        
-        #If there is no backlog in the lowest priority task, 
+
+        #If there is no backlog in the lowest priority task,
         #init the simulator again to force the worst release pattern.
         #TODO this should be done in the release of higher priority task
         if idx == len(self.tasks)-1 and self.workload( idx ) == 0:
@@ -125,8 +126,8 @@ class MissRateSimulator:
             self.eventList = []
 
             self.initState()
-        
-        
+
+
 
     def event_to_dispatch( self, event, fr ):
         # take out the delta from the event
@@ -142,7 +143,7 @@ class MissRateSimulator:
         func( event.idx, fr )
 
 
-    def elapsedTime( self, event ):    
+    def elapsedTime( self, event ):
         delta = event.delta
         # update the deltas of remaining events in the event list.
         if len(self.eventList) == 0:
@@ -170,7 +171,7 @@ class MissRateSimulator:
 
 
     def missRate( self, idx):
-        # return the miss rate of task idx              
+        # return the miss rate of task idx
         return self.statusTable[ idx ][ 2 ] / self.statusTable[ idx ][ 1 ]
 
     def totalMissRate( self ):
@@ -202,18 +203,18 @@ class MissRateSimulator:
 
     def initState( self ):
         # init
-        print self.tasks
-        self.eventList = [] 
+        #print self.tasks
+        self.eventList = []
 
         # task release together at 0 without delta / release from the lowest priority task
         tmp=range(len(self.tasks))
-        tmp = tmp[::-1]    
+        tmp = tmp[::-1]
         for idx in tmp:
             self.statusTable[ idx ][ 0 ] = 0
-            self.statusTable[ idx ][ 3 ] = self.statusTable[ idx ][ 1 ] 
+            self.statusTable[ idx ][ 3 ] = self.statusTable[ idx ][ 1 ]
             self.eventList.append(self.eventClass(0,0,idx))
-        self.tableReport()
-        #print 
+        #self.tableReport()
+        #print
 
     def dispatcher(self, targetedNumber, fr):
         # Stop when the number of released jobs in the lowest priority task is equal to the targeted number.
@@ -226,7 +227,7 @@ class MissRateSimulator:
                 e = self.getNextEvent()
                 self.event_to_dispatch(e, fr )
         #print "Stop at task "+str(e.idx)
-        self.tableReport()
+        #self.tableReport()
 
 
 

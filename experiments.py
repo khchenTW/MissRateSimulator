@@ -1,6 +1,6 @@
 from __future__ import division
 from bounds import *
-from dispatcher import MissRateSimulator
+from simulator import MissRateSimulator
 import sys
 import numpy as np
 import timing
@@ -11,16 +11,15 @@ import task_generator
 import mixed_task_builder
 
 
-#faultRate = [10**-4]
-#faultrate must be at least 1
-faultRate = [0]
+faultRate = [10**-4]
+#faultrate must be in the range between 0 and 1
 hardTaskFactor = [2.2/1.2]
 n = 2
 # this list is used to generate a readible name of output.
 power = [4]
-utilization = [30]
+utilization = [75]
 sumbound = 4
-jobnum = 2
+jobnum = 100000
 lookupTable = [[-1 for x in range(sumbound+3)] for y in range(n)]
 conlookupTable = [[-1 for x in range(sumbound+3)] for y in range(n)]
 
@@ -139,10 +138,10 @@ def experiments_sim(por, fr, uti, inputfile):
 
     for tasks in tasksets:
         #print tasks
-        global lookupTable        
+        global lookupTable
         global conlookupTable
-                  
-        simulator=MissRateSimulator(n, tasks)      
+
+        simulator=MissRateSimulator(n, tasks)
         #simulator.initState(tasks)
         #tmptasks = tasks[:]
 
@@ -150,8 +149,8 @@ def experiments_sim(por, fr, uti, inputfile):
         # Assume the lowest priority task has maximum...
         """
         lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
-        conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]        
-        
+        conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
+
         tmp = Approximation(sumbound, n-1, tasks, 0)
         if tmp < 10**-4:
             continue
