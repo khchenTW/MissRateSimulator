@@ -84,7 +84,7 @@ box = mpatches.Patch(color='blue', label='First to Third Quartiles', linewidth=3
 av = mpatches.Patch(color='red', label='Median', linewidth=3)
 whisk = mpatches.Patch(color='black', label='Whiskers', linewidth=3)
 
-plt.legend(handles=[av, box, whisk], fontsize=12, frameon=True, loc=4)
+plt.legend(handles=[av, box, whisk], fontsize=12, frameon=True, loc=1)
 
 
 pp.savefig()

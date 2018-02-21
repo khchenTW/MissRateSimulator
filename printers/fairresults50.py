@@ -21,7 +21,8 @@ perfault = []
 pp = PdfPages(folder + fileName + '.pdf')
 
 percentageU = 50
-title = 'Tasks: '+ repr(10) + ', Utilization:'+repr(percentageU)+'%'
+#title = 'Tasks: '+ repr(10) + ', Utilization:'+repr(percentageU)+'%'
+title = 'Tasks: '+ repr(10) + ', $U^N_{SUM}$:'+repr(percentageU)+'%'
 
 faultRate = [10**-2., 10**-4, 10**-6.]
 
@@ -67,7 +68,7 @@ capprops = dict(linewidth=2.5)
 plt.title(title, fontsize=20)
 plt.grid(True)
 plt.ylabel('Expected Miss Rate', fontsize=20)
-plt.xlabel('Error rate', fontsize=22)
+plt.xlabel('Fault Rate', fontsize=22)
 ax = plt.subplot()
 ax.set_yscale("log")
 ax.set_ylim([10**-28,10**0])
@@ -84,7 +85,7 @@ box = mpatches.Patch(color='blue', label='First to Third Quartiles', linewidth=3
 av = mpatches.Patch(color='red', label='Median', linewidth=3)
 whisk = mpatches.Patch(color='black', label='Whiskers', linewidth=3)
 
-plt.legend(handles=[av, box, whisk], fontsize=12, frameon=True, loc=5)
+plt.legend(handles=[av, box, whisk], fontsize=12, frameon=True, loc=1)
 
 pp.savefig()
 plt.clf()

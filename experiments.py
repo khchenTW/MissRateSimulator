@@ -19,7 +19,7 @@ n = 2
 power = [4]
 utilization = [75]
 sumbound = 4
-jobnum = 100000
+jobnum = 2000000
 lookupTable = [[-1 for x in range(sumbound+3)] for y in range(n)]
 conlookupTable = [[-1 for x in range(sumbound+3)] for y in range(n)]
 
@@ -58,15 +58,6 @@ def taskSetInput(uti, fr, por, tasksets_amount, part):
 #tasks.append({'period': 8, 'abnormal_exe': 1, 'deadline': 5, 'execution': 5, 'type': 'hard', 'prob': 1e-06})
 
 def lookup(k, tasks, numDeadline, mode):
-    '''
-    # Now is purely for chernoff bounds
-    global lookupTable
-    #due to array design, numDeadline
-    if lookupTable[k][numDeadline] == -1:
-        #calcualte
-        lookupTable[k][numDeadline] = EPST.probabilisticTest_k(k, tasks, numDeadline, 1)
-    return lookupTable[k][numDeadline]
-    '''
     global lookupTable
     global conlookupTable
     if mode == 0:
@@ -119,6 +110,8 @@ def experiments_sim(por, fr, uti, inputfile):
     ExpectedTotalRate = []
     ExpectedMaxRate = []
     ConMissRate = []
+    stampCON = []
+    stampEPST = []
 
     tasksets = np.load(inputfile+'.npy')
 
@@ -134,12 +127,16 @@ def experiments_sim(por, fr, uti, inputfile):
         lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
         conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
 
+        timing.tlog_start("EPST starts", 1)
         tmp = Approximation(sumbound, n-1, tasks, 0)
+        timing.tlog_end("EPST finishes", stampEPST, 1)
         if tmp < 10**-4:
             continue
         else:
             ExpectedMaxRate.append(tmp)
+            timing.tlog_start("convolution starts", 1)
             ConMissRate.append(Approximation(sumbound, n-1, tasks, 1))
+            timing.tlog_end("convolution finishes", stampCON, 1)
 
 
         timing.tlog_start("simulator starts", 1)
@@ -217,6 +214,7 @@ def experiments_emr(por, fr, uti, inputfile ):
 def trendsOfPhiMI(por, fr, uti, inputfile):
     tasksets = np.load(inputfile+'.npy')
 
+    stampPHI = []
     IResults = []
     Results = []
     IlistRes = []
@@ -225,10 +223,12 @@ def trendsOfPhiMI(por, fr, uti, inputfile):
         Results = []
         IResults = []
         for x in range(1, 11):
+            timing.tlog_start("Phi starts", 1)
             r = EPST.probabilisticTest_k(n-1, tasks, x, Chernoff_bounds, 1)
+            print r
+            timing.tlog_end("Phi finishes", stampPHI, 1)
             IResults.append(r*x)
             Results.append(r)
-            print r
         IlistRes.append(IResults)
         listRes.append(Results)
     print len(IlistRes)
