@@ -186,29 +186,25 @@ def experiments_emr(por, fr, uti, inputfile ):
     #just use to quickly get emr
     tasksets = np.load(inputfile+'.npy')
 
-    #ConMissRate = []
+    ConMissRate = []
     ExpectedMissRate = []
     for tasks in tasksets:
         #print tasks
-        #global eventList
-
-        #global statusTable
-        #statusTable = [[0 for x in range(4)] for y in range(n)]
 
         global lookupTable
         lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
 
         #global conlookupTable
-        #conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
+        conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
 
         ExpectedMissRate.append(Approximation(sumbound, n-1, tasks, 0))
-        #ConMissRate.append(Approximation(sumbound, n-1, tasks, 1))
+        ConMissRate.append(Approximation(sumbound, n-1, tasks, 1))
 
     print "Result for fr"+str(power[por])+"_uti"+str(uti)
     print "ExpMissRate:"
     print ExpectedMissRate
-    #print "ConExpMissRate:"
-    #print ConMissRate
+    print "ConExpMissRate:"
+    print ConMissRate
 
 
 def trendsOfPhiMI(por, fr, uti, inputfile):

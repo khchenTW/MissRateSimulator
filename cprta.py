@@ -96,7 +96,7 @@ def cprtao(tasks, numD):
         #print min(alist[0], key =lambda y:y[0])
         try:
             signal.signal(signal.SIGALRM, handler)
-            signal.alarm(60*3)
+            signal.alarm(60*5)
             for j in range(1, int(math.floor(r[0][0]*numD))+1): # here is the testing loop. r[0][0] is the target deadline
                 tmpalist = []
                 countq = 0
