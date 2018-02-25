@@ -78,21 +78,27 @@ def lookup(k, tasks, numDeadline, mode):
 def Approximation(J, k, tasks, mode=0):
     # mode 0 == EPST, 1 = CPRTA
     # J is the bound of the idx
+    if mode == 0:
+        global lookupTable
+        lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
+    else:
+        global conlookupTable
+        conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
+
+    print 'Approximation mode: '+str(mode)
     probsum = 0
     for x in range(1, J+1):
         probsum += lookup(k, tasks, x, mode)*x
-        #print 'mode: '+str(mode)
-        #print 'sum:'
-        #print probsum
+        print 'precise part:'
+        print probsum
     if lookup(k, tasks, J, mode)!= 0:
         r = lookup(k, tasks, J+1, mode)/lookup(k, tasks, J, mode)
-        if r == 1:
+        if r >= 1:
             print "bug: r is not correct"
             return -1
         probsum += lookup(k, tasks, J, mode)/(1-r)
-
-        #print 'Rest mode: '+str(mode)
-        #print probsum
+        print 'approximation part:'
+        print probsum
 
     if probsum == 0:
         return 0
@@ -189,14 +195,6 @@ def experiments_emr(por, fr, uti, inputfile ):
     ConMissRate = []
     ExpectedMissRate = []
     for tasks in tasksets:
-        #print tasks
-
-        global lookupTable
-        lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
-
-        #global conlookupTable
-        conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
-
         ExpectedMissRate.append(Approximation(sumbound, n-1, tasks, 0))
         ConMissRate.append(Approximation(sumbound, n-1, tasks, 1))
 
