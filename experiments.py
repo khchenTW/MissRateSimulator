@@ -5,26 +5,29 @@ import sys
 import numpy as np
 import timing
 import cprta
+import decimal
 import TDA
 import EPST
 import task_generator
 import mixed_task_builder
 
-
 faultRate = [10**-4]
 #faultrate must be in the range between 0 and 1
 hardTaskFactor = [2.2/1.2]
-n = 2
 # this list is used to generate a readible name of output.
 power = [4]
 utilization = [75]
 sumbound = 4
-jobnum = 2000000
+jobnum = 5000000
+lookupTable = []
+conlookupTable = []
+'''
 lookupTable = [[-1 for x in range(sumbound+3)] for y in range(n)]
 conlookupTable = [[-1 for x in range(sumbound+3)] for y in range(n)]
+'''
 
 # for task generation
-def taskGeneWithTDA(uti, fr):
+def taskGeneWithTDA(uti, fr, n):
     while (1):
         tasks = task_generator.taskGeneration_p(n,uti)
         tasks = mixed_task_builder.hardtaskWCET(tasks, hardTaskFactor[0], fr)
@@ -42,10 +45,10 @@ def taskGeneWithTDA(uti, fr):
             pass
     return tasks
 
-def taskSetInput(uti, fr, por, tasksets_amount, part):
-    tasksets = [taskGeneWithTDA(uti, fr) for n in range(tasksets_amount)]
-    np.save('inputs/'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_'+str(part), tasksets)
-    return 'inputs/'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_'+str(part)
+def taskSetInput(n, uti, fr, por, tasksets_amount, part, filename):
+    tasksets = [taskGeneWithTDA(uti, fr, n) for x in range(tasksets_amount)]
+    np.save(filename, tasksets)
+    return filename
 
 # Example of Periodic Implicit deadline case in the paper (without normal execution)
 #tasks = []
@@ -75,7 +78,7 @@ def lookup(k, tasks, numDeadline, mode):
             #print cprta.cprtao(tasks, numDeadline)
         return conlookupTable[k][numDeadline]
 
-def Approximation(J, k, tasks, mode=0):
+def Approximation(n, J, k, tasks, mode=0):
     # mode 0 == EPST, 1 = CPRTA
     # J is the bound of the idx
     if mode == 0:
@@ -85,20 +88,24 @@ def Approximation(J, k, tasks, mode=0):
         global conlookupTable
         conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
 
-    print 'Approximation mode: '+str(mode)
+    #print 'Approximation mode: '+str(mode)
     probsum = 0
     for x in range(1, J+1):
         probsum += lookup(k, tasks, x, mode)*x
-        print 'precise part:'
-        print probsum
+        #print 'precise part:'
+        #print probsum
+    '''
     if lookup(k, tasks, J, mode)!= 0:
-        r = lookup(k, tasks, J+1, mode)/lookup(k, tasks, J, mode)
-        if r >= 1:
+        if lookup(k, tasks, J+1, mode) != lookup(k, tasks, J, mode):
+            r = decimal.Decimal(lookup(k, tasks, J+1, mode)/lookup(k, tasks, J, mode))
+            print "r="+str(decimal.Decimal(r))
+        else:
             print "bug: r is not correct"
             return -1
-        probsum += lookup(k, tasks, J, mode)/(1-r)
+        probsum += decimal.Deciaml(lookup(k, tasks, J, mode)/(1-r))
         print 'approximation part:'
         print probsum
+    '''
 
     if probsum == 0:
         return 0
@@ -109,7 +116,7 @@ def Approximation(J, k, tasks, mode=0):
         return probsum/(1+probsum-lookup(k, tasks, 1, mode))
 
 
-def experiments_sim(por, fr, uti, inputfile):
+def experiments_sim(n, por, fr, uti, inputfile):
 
     totalRateList = []
     MaxRateList = []
@@ -134,14 +141,14 @@ def experiments_sim(por, fr, uti, inputfile):
         conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
 
         timing.tlog_start("EPST starts", 1)
-        tmp = Approximation(sumbound, n-1, tasks, 0)
+        tmp = Approximation(n, sumbound, n-1, tasks, 0)
         timing.tlog_end("EPST finishes", stampEPST, 1)
         if tmp < 10**-4:
             continue
         else:
             ExpectedMaxRate.append(tmp)
             timing.tlog_start("convolution starts", 1)
-            ConMissRate.append(Approximation(sumbound, n-1, tasks, 1))
+            ConMissRate.append(Approximation(n, sumbound, n-1, tasks, 1))
             timing.tlog_end("convolution finishes", stampCON, 1)
 
 
@@ -188,15 +195,16 @@ def experiments_sim(por, fr, uti, inputfile):
     fo.close()
 
 
-def experiments_emr(por, fr, uti, inputfile ):
+def experiments_emr(n, por, fr, uti, inputfile ):
     #just use to quickly get emr
     tasksets = np.load(inputfile+'.npy')
 
     ConMissRate = []
     ExpectedMissRate = []
     for tasks in tasksets:
-        ExpectedMissRate.append(Approximation(sumbound, n-1, tasks, 0))
-        ConMissRate.append(Approximation(sumbound, n-1, tasks, 1))
+    #tasks = tasksets[0]
+        ExpectedMissRate.append(Approximation(n, sumbound, n-1, tasks, 0))
+        ConMissRate.append(Approximation(n, sumbound, n-1, tasks, 1))
 
     print "Result for fr"+str(power[por])+"_uti"+str(uti)
     print "ExpMissRate:"
@@ -205,42 +213,47 @@ def experiments_emr(por, fr, uti, inputfile ):
     print ConMissRate
 
 
-def trendsOfPhiMI(por, fr, uti, inputfile):
+def trendsOfPhiMI(n, por, fr, uti, inputfile):
     tasksets = np.load(inputfile+'.npy')
 
-    stampPHI = []
-    IResults = []
+    stampPHIEMR = []
+    stampPHICON = []
+    CResults = []
     Results = []
-    IlistRes = []
+    xRestuls = []
+    ClistRes = []
     listRes = []
+    xlistRes = []
     for tasks in tasksets:
         Results = []
         IResults = []
         for x in range(1, 11):
-            timing.tlog_start("Phi starts", 1)
+            timing.tlog_start("Phi EMR starts", 1)
             r = EPST.probabilisticTest_k(n-1, tasks, x, Chernoff_bounds, 1)
-            print r
-            timing.tlog_end("Phi finishes", stampPHI, 1)
-            IResults.append(r*x)
+            timing.tlog_end("Phi EMR finishes", stampPHIEMR, 1)
+            timing.tlog_start("Phi CON starts", 1)
+            c = cprta.cprtao(tasks, x)
+            timing.tlog_end("Phi CON finishes", stampPHICON, 1)
             Results.append(r)
-        IlistRes.append(IResults)
+            CResults.append(c)
+            xRestuls.append(r*x)
+        xlistRes.apprned(xResults)
+        ClistRes.append(CResults)
         listRes.append(Results)
-    print len(IlistRes)
-    print len(listRes)
 
-    ofile = "txt/trendsI_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
+    ofile = "txt/trendsC_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
     fo = open(ofile, "wb")
-    fo.write("Phi*i")
+    fo.write("CPhi")
     fo.write("\n")
-    for item in IlistRes:
+    for item in ClistRes:
         print item
         fo.write(str(item))
         fo.write("\n")
     fo.close()
 
-    ofile = "txt/trends_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
+    ofile = "txt/trendsE_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
     fo = open(ofile, "wb")
-    fo.write("Phi")
+    fo.write("EPhi")
     fo.write("\n")
     for item in listRes:
         print item
@@ -248,51 +261,46 @@ def trendsOfPhiMI(por, fr, uti, inputfile):
         fo.write("\n")
     fo.close()
 
-def test(k, tasks):
-    print tasks[k]
-    print EPST.probabilisticTest_p(tasks, 1, Chernoff_bounds, 1)
-    print EPST.probabilisticTest_k(k, tasks, 1, Chernoff_bounds, 1)
-    print EPST.probabilisticTest_k(k, tasks, 2, Chernoff_bounds, 1)
-    print EPST.probabilisticTest_k(k, tasks, 3, Chernoff_bounds, 1)
-    probsum = 0
-    for x in range(1, sumbound+1):
-        probsum += EPST.probabilisticTest_k(k, tasks, x, Chernoff_bounds, 1)*x
-    print probsum
-
-
-
+    ofile = "txt/trendsX_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
+    fo = open(ofile, "wb")
+    fo.write("EPhi*j")
+    fo.write("\n")
+    for item in xlistRes:
+        print item
+        fo.write(str(item))
+        fo.write("\n")
+    fo.close()
 def main():
     args = sys.argv
-    if len(args) < 4:
-        print "Usage: python experiments.py [mode] [tasksets_amount] [part]"
+    if len(args) < 5:
+        print "Usage: python experiments.py [mode] [number of tasks] [tasksets_amount] [part]"
         return -1
     # this is used to choose the types of experiments.
     mode = int(args[1])
+    n = int(args[2])
     # this is used to generate the number of sets you want to test / load the cooresponding input file.
-    tasksets_amount = int(args[2])
+    tasksets_amount = int(args[3])
     # this is used to identify the experimental sets once the experiments running in parallel.
-    part = int(args[3])
-    if mode == 0:
-        for por, fr in enumerate(faultRate):
-            for uti in utilization:
-                fileInput=taskSetInput(uti, fr, por, tasksets_amount, part)
+    part = int(args[4])
+
+    for por, fr in enumerate(faultRate):
+        for uti in utilization:
+            filename = 'inputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_'+str(part)
+            if mode == 0:
+                fileInput=taskSetInput(n, uti, fr, por, tasksets_amount, part, filename)
                 print "Generate Task sets:"
                 print np.load(fileInput+'.npy')
-    elif mode == 1:
-        #use to quickly get emr without simulation
-        for por, fr in enumerate(faultRate):
-            for uti in utilization:
-                experiments_emr(por, fr, uti,'inputs/'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_'+str(part))
-    elif mode == 2:
-        #use to get sim results together with emr
-        for por, fr in enumerate(faultRate):
-            for uti in utilization:
-                experiments_sim(por, fr, uti,'inputs/'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_'+str(part))
-    elif mode == 3:
-        #use to get the relationship between phi and phi*i to show the converage.
-        for por, fr in enumerate(faultRate):
-            for uti in utilization:
-                trendsOfPhiMI(por, fr, uti,'inputs/'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_'+str(part))
+            elif mode == 1:
+                #use to quickly get emr without simulation
+                experiments_emr(n, por, fr, uti, filename)
+            elif mode == 2:
+                #use to get sim results together with emr
+                experiments_sim(n, por, fr, uti, filename)
+            elif mode == 3:
+                #use to get the relationship between phi and phi*i to show the converage.
+                trendsOfPhiMI(n, por, fr, uti, filename)
+            else:
+                raise NotImplementedError("Error: you use a mode without implementation")
 
 if __name__=="__main__":
     main()
