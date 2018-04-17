@@ -1,6 +1,9 @@
 # Event-based Miss Rate Simulator
 
-# Description of the adopted files from [1]:
+# Environment:
+- Python 2.7
+
+# Description of the adopted files from [1] and [2]:
 - EPST.py contains the analyses of the upper bound of the deadline misses.
 - bounds.py contains different bounds related to the Chernoff bound.
 - task-generator.py contains the task generating routines.
@@ -23,5 +26,11 @@
 - All the results are statically stored in each ploter in "printer" folder
 - TBD
 
+# Future work / Pending Feature:
+- dynamic-priority scheduling policies
+- non-preemptive task systems
+
 # Reference
-- [1] K. H. Chen and J. J. Chen, "Probabilistic schedulability tests for uniprocessor fixed-priority scheduling under soft errors," 2017 12th IEEE International Symposium on Industrial Embedded Systems (SIES), Toulouse, France, 2017, pp. 1-8.
+- [1] K. H. Chen and J. J. Chen, "Probabilistic schedulability tests for uniprocessor fixed-priority scheduling under soft errors", 2017 12th IEEE International Symposium on Industrial Embedded Systems (SIES), Toulouse, France, 2017, pp. 1-8.
+- [2] Georg von der Brüggen, Nico Piatkowski, Kuan-Hsun Chen, Jian-Jia Chen, Katharina Morik, "
+Efficiently Approximating the Probability of Deadline Misses in Real-Time Systems", accepted in ECRTS 2018.
