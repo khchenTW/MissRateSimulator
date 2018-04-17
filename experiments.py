@@ -64,18 +64,12 @@ def lookup(k, tasks, numDeadline, mode):
     global lookupTable
     global conlookupTable
     if mode == 0:
-    #due to array design, numDeadline
         if lookupTable[k][numDeadline] == -1:
-        #calcualte
             lookupTable[k][numDeadline] = EPST.probabilisticTest_k(k, tasks, numDeadline, Chernoff_bounds, 1)
-            #print EPST.probabilisticTest_k(k, tasks, numDeadline, 1)
-            #print cprta.cprtao(tasks, numDeadline)
         return lookupTable[k][numDeadline]
     else:
         if conlookupTable[k][numDeadline] == -1:
             conlookupTable[k][numDeadline] = cprta.cprtao(tasks, numDeadline)
-            #print EPST.probabilisticTest_k(k, tasks, numDeadline, 1)
-            #print cprta.cprtao(tasks, numDeadline)
         return conlookupTable[k][numDeadline]
 
 def Approximation(n, J, k, tasks, mode=0):
@@ -119,7 +113,7 @@ def Approximation(n, J, k, tasks, mode=0):
 def experiments_sim(n, por, fr, uti, inputfile):
 
     totalRateList = []
-    MaxRateList = []
+    SimRateList = []
     ExpectedTotalRate = []
     ExpectedMaxRate = []
     ConMissRate = []
@@ -154,12 +148,12 @@ def experiments_sim(n, por, fr, uti, inputfile):
 
         timing.tlog_start("simulator starts", 1)
         simulator.dispatcher(jobnum, fr)
-        MaxRateList.append(simulator.missRate(n-1))
+        SimRateList.append(simulator.missRate(n-1))
         timing.tlog_end("simulator finishes", simulator.stampSIM, 1)
 
     print "Result for fr"+str(power[por])+"_uti"+str(uti)
-    print "MaxRateList:"
-    print MaxRateList
+    print "SimRateList:"
+    print SimRateList
     print "ExpectedMaxRate:"
     print ExpectedMaxRate
     print "ConMissRate:"
@@ -168,10 +162,10 @@ def experiments_sim(n, por, fr, uti, inputfile):
 
     ofile = "txt/results_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
     fo = open(ofile, "wb")
-    fo.write("MaxRateList:")
+    fo.write("SimRateList:")
     fo.write("\n")
     fo.write("[")
-    for item in MaxRateList:
+    for item in SimRateList:
         fo.write(str(item))
         fo.write(",")
     fo.write("]")
@@ -198,13 +192,19 @@ def experiments_sim(n, por, fr, uti, inputfile):
 def experiments_emr(n, por, fr, uti, inputfile ):
     #just use to quickly get emr
     tasksets = np.load(inputfile+'.npy')
+    stampPHIEMR = []
+    stampPHICON = []
 
     ConMissRate = []
     ExpectedMissRate = []
     for tasks in tasksets:
     #tasks = tasksets[0]
+        timing.tlog_start("EMR start", 1)
         ExpectedMissRate.append(Approximation(n, sumbound, n-1, tasks, 0))
+        timing.tlog_end("EMR finishes", stampPHIEMR, 1)
+        timing.tlog_start("CON start", 1)
         ConMissRate.append(Approximation(n, sumbound, n-1, tasks, 1))
+        timing.tlog_end("CON finishes", stampPHICON, 1)
 
     print "Result for fr"+str(power[por])+"_uti"+str(uti)
     print "ExpMissRate:"
@@ -216,6 +216,7 @@ def experiments_emr(n, por, fr, uti, inputfile ):
 def trendsOfPhiMI(n, por, fr, uti, inputfile):
     tasksets = np.load(inputfile+'.npy')
 
+    ExpectedMissRate = []
     stampPHIEMR = []
     stampPHICON = []
     CResults = []
@@ -231,14 +232,18 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
             timing.tlog_start("Phi EMR starts", 1)
             r = EPST.probabilisticTest_k(n-1, tasks, x, Chernoff_bounds, 1)
             timing.tlog_end("Phi EMR finishes", stampPHIEMR, 1)
-            timing.tlog_start("Phi CON starts", 1)
-            c = cprta.cprtao(tasks, x)
-            timing.tlog_end("Phi CON finishes", stampPHICON, 1)
+            timing.tlog_start("EMR start", 1)
+            ExpectedMissRate.append(Approximation(n, sumbound, n-1, tasks, 0))
+            timing.tlog_end("EMR finishes", stampPHIEMR, 1)
+
+            #timing.tlog_start("Phi CON starts", 1)
+            #c = cprta.cprtao(tasks, x)
+            #timing.tlog_end("Phi CON finishes", stampPHICON, 1)
             Results.append(r)
-            CResults.append(c)
+            #CResults.append(c)
             xRestuls.append(r*x)
-        xlistRes.apprned(xResults)
-        ClistRes.append(CResults)
+        xlistRes.append(xResults)
+        #ClistRes.append(CResults)
         listRes.append(Results)
 
     ofile = "txt/trendsC_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
@@ -270,6 +275,50 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
         fo.write(str(item))
         fo.write("\n")
     fo.close()
+
+def experiments_art(n, por, fr, uti, inputfile):
+
+    SimRateList = []
+    tasksets = []
+    sets = 20
+
+    #this for artifical test
+
+    tasks = []
+    tasks.append({'period': 3, 'abnormal_exe': 2, 'deadline': 3, 'execution': 2, 'type': 'hard', 'prob': 0})
+    tasks.append({'period': 5, 'abnormal_exe': 2.25, 'deadline': 5, 'execution': 1, 'type': 'hard', 'prob': 5e-01})
+
+    for x in range(sets):
+        tasksets.append(tasks)
+
+    for tasks in tasksets:
+
+        simulator=MissRateSimulator(n, tasks)
+
+        timing.tlog_start("simulator starts", 1)
+        simulator.dispatcher(jobnum, 0.5)
+        SimRateList.append(simulator.missRate(n-1))
+        timing.tlog_end("simulator finishes", simulator.stampSIM, 1)
+
+    print "Result for fr"+str(power[por])+"_uti"+str(uti)
+    print "SimRateList:"
+    print SimRateList
+
+
+    ofile = "txt/ARTresults_task"+str(n)+"_fr"+str(power[por])+"_runs"+str(sets)+".txt"
+    fo = open(ofile, "wb")
+    fo.write("SimRateList:")
+    fo.write("\n")
+    fo.write("[")
+    for item in SimRateList:
+        fo.write(str(item))
+        fo.write(",")
+    fo.write("]")
+    fo.write("\n")
+    fo.close()
+
+
+
 def main():
     args = sys.argv
     if len(args) < 5:
@@ -299,6 +348,9 @@ def main():
             elif mode == 3:
                 #use to get the relationship between phi and phi*i to show the converage.
                 trendsOfPhiMI(n, por, fr, uti, filename)
+            elif mode == 4:
+                #use  to present the example illustrating the differences between the miss rate and the probability of deadline misses.
+                experiments_art(n, por, fr, uti, filename)
             else:
                 raise NotImplementedError("Error: you use a mode without implementation")
 

@@ -52,6 +52,7 @@ class MissRateSimulator:
         print
 
     def findTheHighestWithWorkload( self ):
+        # Assume that the fixed priority is given in the task set.
         # if there is no workload in the table, returns -1
         hidx = -1
         for i in range(self.n):
