@@ -4,33 +4,43 @@ from simulator import MissRateSimulator
 import sys
 import numpy as np
 import timing
-import cprta
+#import cprta #this is from SIES'17
+import deadline_miss_probability #this is from ECRTS'18
 import decimal
 import TDA
 import EPST
 import task_generator
 import mixed_task_builder
 
-faultRate = [10**-4]
-#faultrate must be in the range between 0 and 1
-hardTaskFactor = [2.2/1.2]
+hardTaskFactor = [1.83]
+
+# Setting for Fig4:
+# faultrate must be in the range between 0 and 1
+#faultRate = [10**-4]
 # this list is used to generate a readible name of output.
-power = [4]
-utilization = [75]
+#power = [4]
+# this is U^N_{SUM}
+#utilization = [70]
+
+# Setting for Fig6:
+faultRate = [10**-2, 10**-4, 10**-6]
+power = [2, 4, 6]
+utilization = [50, 70]
+seed = 0
+
 sumbound = 4
-jobnum = 5000000
+# for the motivational example
+#jobnum = 5000000
+jobnum = 2000000
 lookupTable = []
 conlookupTable = []
-'''
-lookupTable = [[-1 for x in range(sumbound+3)] for y in range(n)]
-conlookupTable = [[-1 for x in range(sumbound+3)] for y in range(n)]
-'''
 
 # for task generation
 def taskGeneWithTDA(uti, fr, n):
     while (1):
         tasks = task_generator.taskGeneration_p(n,uti)
-        tasks = mixed_task_builder.hardtaskWCET(tasks, hardTaskFactor[0], fr)
+        #tasks = task_generator.taskGeneration_rounded(n, uti)
+        tasks = mixed_task_builder.mixed_task_set(tasks, hardTaskFactor[0], fr)
         #keepTasks = tasks[:]
         #for i in tasks:
             #print i['period']
@@ -38,7 +48,6 @@ def taskGeneWithTDA(uti, fr, n):
 
         if TDA.TDAtest( tasks ) == 0:
             #success, if even normal TDA cannot pass, our estimated missrate is really worse.
-            #test(n-1, tasks)
             break
         else:
             #fail
@@ -50,16 +59,6 @@ def taskSetInput(n, uti, fr, por, tasksets_amount, part, filename):
     np.save(filename, tasksets)
     return filename
 
-# Example of Periodic Implicit deadline case in the paper (without normal execution)
-#tasks = []
-#tasks.append({'period': 2, 'abnormal_exe': 1, 'deadline': 2, 'execution': 1, 'type': 'hard', 'prob': 1e-06})
-#tasks.append({'period': 5, 'abnormal_exe': 1, 'deadline': 5, 'execution': 3, 'type': 'hard', 'prob': 1e-06})
-
-# Example of Periodic Implicit deadline case in the paper (without normal execution)
-#tasks = []
-#tasks.append({'period': 2, 'abnormal_exe': 1, 'deadline': 2, 'execution': 1, 'type': 'hard', 'prob': 1e-06})
-#tasks.append({'period': 8, 'abnormal_exe': 1, 'deadline': 5, 'execution': 5, 'type': 'hard', 'prob': 1e-06})
-
 def lookup(k, tasks, numDeadline, mode):
     global lookupTable
     global conlookupTable
@@ -69,7 +68,13 @@ def lookup(k, tasks, numDeadline, mode):
         return lookupTable[k][numDeadline]
     else:
         if conlookupTable[k][numDeadline] == -1:
-            conlookupTable[k][numDeadline] = cprta.cprtao(tasks, numDeadline)
+            #for SIES
+            #conlookupTable[k][numDeadline] = cprta.cprtao(tasks, numDeadline)
+            #for ECRTS
+            probs = []
+            states = []
+            pruned = []
+            conlookupTable[k][numDeadline] = deadline_miss_probability.calculate_pruneCON(tasks, 0.001, probs, states, pruned, numDeadline)
         return conlookupTable[k][numDeadline]
 
 def Approximation(n, J, k, tasks, mode=0):
@@ -112,10 +117,8 @@ def Approximation(n, J, k, tasks, mode=0):
 
 def experiments_sim(n, por, fr, uti, inputfile):
 
-    totalRateList = []
     SimRateList = []
-    ExpectedTotalRate = []
-    ExpectedMaxRate = []
+    ExpectedMissRate = []
     ConMissRate = []
     stampCON = []
     stampEPST = []
@@ -140,7 +143,7 @@ def experiments_sim(n, por, fr, uti, inputfile):
         if tmp < 10**-4:
             continue
         else:
-            ExpectedMaxRate.append(tmp)
+            ExpectedMissRate.append(tmp)
             timing.tlog_start("convolution starts", 1)
             ConMissRate.append(Approximation(n, sumbound, n-1, tasks, 1))
             timing.tlog_end("convolution finishes", stampCON, 1)
@@ -154,37 +157,25 @@ def experiments_sim(n, por, fr, uti, inputfile):
     print "Result for fr"+str(power[por])+"_uti"+str(uti)
     print "SimRateList:"
     print SimRateList
-    print "ExpectedMaxRate:"
-    print ExpectedMaxRate
+    print "ExpectedMissRate:"
+    print ExpectedMissRate
     print "ConMissRate:"
     print ConMissRate
 
 
-    ofile = "txt/results_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
+    ofile = "txt/COMPARISON_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
     fo = open(ofile, "wb")
     fo.write("SimRateList:")
     fo.write("\n")
-    fo.write("[")
-    for item in SimRateList:
-        fo.write(str(item))
-        fo.write(",")
-    fo.write("]")
+    fo.write(str(SimRateList))
     fo.write("\n")
     fo.write("ConMissRate:")
     fo.write("\n")
-    fo.write("[")
-    for item in ConMissRate:
-        fo.write(str(item))
-        fo.write(",")
-    fo.write("]")
+    fo.write(str(ConMissRate))
     fo.write("\n")
-    fo.write("ExpectedMaxRate:")
+    fo.write("ExpectedMissRate:")
     fo.write("\n")
-    fo.write("[")
-    for item in ExpectedMaxRate:
-        fo.write(str(item))
-        fo.write(",")
-    fo.write("]")
+    fo.write(str(ExpectedMissRate))
     fo.write("\n")
     fo.close()
 
@@ -198,43 +189,64 @@ def experiments_emr(n, por, fr, uti, inputfile ):
     ConMissRate = []
     ExpectedMissRate = []
     for tasks in tasksets:
-    #tasks = tasksets[0]
         timing.tlog_start("EMR start", 1)
         ExpectedMissRate.append(Approximation(n, sumbound, n-1, tasks, 0))
         timing.tlog_end("EMR finishes", stampPHIEMR, 1)
-        timing.tlog_start("CON start", 1)
-        ConMissRate.append(Approximation(n, sumbound, n-1, tasks, 1))
-        timing.tlog_end("CON finishes", stampPHICON, 1)
+        #timing.tlog_start("CON start", 1)
+        #ConMissRate.append(Approximation(n, sumbound, n-1, tasks, 1))
+        #timing.tlog_end("CON finishes", stampPHICON, 1)
 
     print "Result for fr"+str(power[por])+"_uti"+str(uti)
     print "ExpMissRate:"
     print ExpectedMissRate
-    print "ConExpMissRate:"
-    print ConMissRate
+    #print "ConExpMissRate:"
+    #print ConMissRate
 
+    ofile = "txt/EMR_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
+    fo = open(ofile, "wb")
+    fo.write("Expected Miss Rate:")
+    fo.write("\n")
+    fo.write(str(ExpectedMissRate))
+    fo.write("\n")
+    #fo.write("Con miss Rate:")
+    #fo.write("\n")
+    #fo.write(str(ConMissRate))
+    #fo.write("\n")
+    fo.close()
+    ofile = "txt/EMRtime_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
+    fo = open(ofile, "wb")
+    fo.write("EMR Time:")
+    fo.write("\n")
+    fo.write(str(stampPHIEMR))
+    fo.write("\n")
+    #fo.write("CON Time:")
+    #fo.write("\n")
+    #fo.write(str(stampPHICON))
+    #fo.write("\n")
+    fo.close()
 
 def trendsOfPhiMI(n, por, fr, uti, inputfile):
     tasksets = np.load(inputfile+'.npy')
 
-    ExpectedMissRate = []
+    #ExpectedMissRate = []
     stampPHIEMR = []
-    stampPHICON = []
-    CResults = []
+    #stampPHICON = []
+    #CResults = []
     Results = []
     xRestuls = []
-    ClistRes = []
+    #ClistRes = []
     listRes = []
     xlistRes = []
     for tasks in tasksets:
         Results = []
         IResults = []
         for x in range(1, 11):
-            timing.tlog_start("Phi EMR starts", 1)
+            timing.tlog_start("Phi j starts", 1)
             r = EPST.probabilisticTest_k(n-1, tasks, x, Chernoff_bounds, 1)
-            timing.tlog_end("Phi EMR finishes", stampPHIEMR, 1)
-            timing.tlog_start("EMR start", 1)
-            ExpectedMissRate.append(Approximation(n, sumbound, n-1, tasks, 0))
-            timing.tlog_end("EMR finishes", stampPHIEMR, 1)
+            timing.tlog_end("Phi j finishes", stampPHIEMR, 1)
+            #timing.tlog_start("EMR start", 1)
+            #ExpectedMissRate.append(Approximation(n, sumbound, n-1, tasks, 0))
+            #timing.tlog_end("EMR finishes", stampPHIEMR, 1)
 
             #timing.tlog_start("Phi CON starts", 1)
             #c = cprta.cprtao(tasks, x)
@@ -246,34 +258,38 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
         #ClistRes.append(CResults)
         listRes.append(Results)
 
-    ofile = "txt/trendsC_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
-    fo = open(ofile, "wb")
-    fo.write("CPhi")
-    fo.write("\n")
-    for item in ClistRes:
-        print item
-        fo.write(str(item))
-        fo.write("\n")
-    fo.close()
+    #ofile = "txt/trendsC_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
+    #fo = open(ofile, "wb")
+    #fo.write("CPhi")
+    #fo.write("\n")
+    #for item in ClistRes:
+        #print item
+        #fo.write(str(item))
+        #fo.write("\n")
+    #fo.close()
 
     ofile = "txt/trendsE_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
     fo = open(ofile, "wb")
     fo.write("EPhi")
     fo.write("\n")
-    for item in listRes:
-        print item
-        fo.write(str(item))
-        fo.write("\n")
+    fo.write(str(listRes))
+    fo.write("\n")
     fo.close()
 
     ofile = "txt/trendsX_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
     fo = open(ofile, "wb")
     fo.write("EPhi*j")
     fo.write("\n")
-    for item in xlistRes:
-        print item
-        fo.write(str(item))
-        fo.write("\n")
+    fo.write(str(xlistRes))
+    fo.write("\n")
+    fo.close()
+
+    ofile = "txt/trendsTIME_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
+    fo = open(ofile, "wb")
+    fo.write("Analysis Time")
+    fo.write("\n")
+    fo.write(str(stampPHIEMR))
+    fo.write("\n")
     fo.close()
 
 def experiments_art(n, por, fr, uti, inputfile):
@@ -285,8 +301,8 @@ def experiments_art(n, por, fr, uti, inputfile):
     #this for artifical test
 
     tasks = []
-    tasks.append({'period': 3, 'abnormal_exe': 2, 'deadline': 3, 'execution': 2, 'type': 'hard', 'prob': 0})
-    tasks.append({'period': 5, 'abnormal_exe': 2.25, 'deadline': 5, 'execution': 1, 'type': 'hard', 'prob': 5e-01})
+    tasks.append({'period': 3, 'abnormal_exe': 2, 'deadline': 3, 'execution': 2, 'prob': 0})
+    tasks.append({'period': 5, 'abnormal_exe': 2.25, 'deadline': 5, 'execution': 1, 'prob': 5e-01})
 
     for x in range(sets):
         tasksets.append(tasks)

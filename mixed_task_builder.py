@@ -1,5 +1,5 @@
 '''
-Author: Georg von der Brueggen 
+Author: Georg von der Brueggen
 '''
 
 from __future__ import division
@@ -7,6 +7,15 @@ import random
 import math
 import numpy
 import sort_task_set
+
+def mixed_task_set(tasks, factor, rate):
+    allTasks=[]
+    for task in tasks:
+        task['abnormal_exe']=task['execution']*factor
+        task['prob']=rate
+        allTasks.append(task)
+    return sort_task_set.sort(allTasks, 'period');
+
 
 def hardtaskWCET(tasks, hardTaskWCETFactor, rate):
     allTasks=[]
@@ -35,9 +44,9 @@ def taskGeneration(tasks, hardTasks, softTasks, hardTaskPercentage, hardTaskWCET
         del tasks[pos]
     for task in tasks:
         task['abnormal_exe']=task['execution']*softTaskWCETFactor
-        task['type']='soft' 
+        task['type']='soft'
         softTasks.append(task)
-        allTasks.append(task)       
+        allTasks.append(task)
     allTasks=hardTasks+softTasks
     hardTasks=sort_task_set.sort(hardTasks, 'period')
     softTasks=sort_task_set.sort(softTasks, 'period')
