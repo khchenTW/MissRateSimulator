@@ -10,7 +10,7 @@ def determineWorkload(task, higherPriorityTasks, criteria, time):
         workload += jobs * i[criteria]
     return workload
 
-def min_time(tasks, criteria):
+def min_time(tasks, criteria, numD):
     # test deadline first
     #workload = determineWorkload(task, higherPriorityTasks, criteria, task['deadline'])
     # initiate starting time for recursive TDA
@@ -21,7 +21,7 @@ def min_time(tasks, criteria):
     for i in copy:
         t += i[criteria]
     # resursive TDA
-    while(t < task['deadline']):
+    while(t < task['deadline']*numD):
         workload = determineWorkload(task, copy, criteria, t)
         if workload <= t:
             return t

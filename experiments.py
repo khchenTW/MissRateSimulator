@@ -26,7 +26,6 @@ hardTaskFactor = [1.83]
 faultRate = [10**-2, 10**-4, 10**-6]
 power = [2, 4, 6]
 utilization = [50, 70]
-seed = 0
 
 sumbound = 4
 # for the motivational example
@@ -228,51 +227,52 @@ def experiments_emr(n, por, fr, uti, inputfile ):
 def trendsOfPhiMI(n, por, fr, uti, inputfile):
     tasksets = np.load(inputfile+'.npy')
 
-    #ExpectedMissRate = []
     stampPHIEMR = []
-    #stampPHICON = []
-    #CResults = []
-    Results = []
-    xRestuls = []
-    #ClistRes = []
+    stampPHICON = []
+    ClistRes = []
     listRes = []
     xlistRes = []
     for tasks in tasksets:
+        CResults = []
         Results = []
-        IResults = []
+        xResults = []
+
         for x in range(1, 11):
             timing.tlog_start("Phi j starts", 1)
             r = EPST.probabilisticTest_k(n-1, tasks, x, Chernoff_bounds, 1)
             timing.tlog_end("Phi j finishes", stampPHIEMR, 1)
-            #timing.tlog_start("EMR start", 1)
-            #ExpectedMissRate.append(Approximation(n, sumbound, n-1, tasks, 0))
-            #timing.tlog_end("EMR finishes", stampPHIEMR, 1)
 
-            #timing.tlog_start("Phi CON starts", 1)
-            #c = cprta.cprtao(tasks, x)
-            #timing.tlog_end("Phi CON finishes", stampPHICON, 1)
             Results.append(r)
-            #CResults.append(c)
-            xRestuls.append(r*x)
+            xResults.append(r*x)
+            if x < 8:
+                probs = []
+                states = []
+                pruned = []
+                timing.tlog_start("Phi CON starts", 1)
+                c = deadline_miss_probability.calculate_pruneCON(tasks, 0.001, probs, states, pruned, x)
+                timing.tlog_end("Phi CON finishes", stampPHICON, 1)
+                CResults.append(c)
         xlistRes.append(xResults)
-        #ClistRes.append(CResults)
+        ClistRes.append(CResults)
         listRes.append(Results)
 
-    #ofile = "txt/trendsC_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
-    #fo = open(ofile, "wb")
-    #fo.write("CPhi")
-    #fo.write("\n")
-    #for item in ClistRes:
-        #print item
-        #fo.write(str(item))
-        #fo.write("\n")
-    #fo.close()
+    ofile = "txt/trendsC_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
+    fo = open(ofile, "wb")
+    fo.write("CPhi")
+    fo.write("\n")
+    for item in ClistRes:
+        fo.write(str(item))
+        fo.write("\n")
+    fo.write("\n")
+    fo.close()
 
     ofile = "txt/trendsE_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
     fo = open(ofile, "wb")
     fo.write("EPhi")
     fo.write("\n")
-    fo.write(str(listRes))
+    for item in listRes:
+        fo.write(str(item))
+        fo.write("\n")
     fo.write("\n")
     fo.close()
 
@@ -280,16 +280,32 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
     fo = open(ofile, "wb")
     fo.write("EPhi*j")
     fo.write("\n")
-    fo.write(str(xlistRes))
+    for item in xlistRes:
+        fo.write(str(item))
+        fo.write("\n")
     fo.write("\n")
     fo.close()
 
     ofile = "txt/trendsTIME_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
     fo = open(ofile, "wb")
-    fo.write("Analysis Time")
+    fo.write("CON Analysis Time")
     fo.write("\n")
-    fo.write(str(stampPHIEMR))
+    fo.write("[")
+    for item in stampPHIEMR:
+        fo.write(str(item))
+        fo.write(",")
+    fo.write("]")
     fo.write("\n")
+
+    fo.write("EMR Analysis Time")
+    fo.write("\n")
+    fo.write("[")
+    for item in stampPHICON:
+        fo.write(str(item))
+        fo.write(",")
+    fo.write("]")
+    fo.write("\n")
+
     fo.close()
 
 def experiments_art(n, por, fr, uti, inputfile):

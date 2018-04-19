@@ -13,7 +13,6 @@ from pkg_resources import get_distribution
 
 import TDA
 
-
 ''' Calculates the probability of deadline miss as detailed in Section 5.
 All job releases of higher priority tasks are considered.
 
@@ -21,6 +20,7 @@ All job releases of higher priority tasks are considered.
 'prob_abnormal' the probability of abnormal execution, i.e., higher WCET.
 'probabilities' tracks the calculated probabilities for each time point
 'states' tracks the number of states considered for each time point '''
+'''
 def calculate(tasks, prob_abnormal, probabilties, states):
     tasks = sort(tasks, 'deadline', False)
     deadline = tasks[len(tasks)-1]['deadline']
@@ -40,7 +40,7 @@ def calculate(tasks, prob_abnormal, probabilties, states):
         if (probabilties[i]<probability):
             probability = probabilties[i]
     return probability
-
+'''
 ''' KHCHEN: extension for consecutive deadlines, which calculates the probability of deadline miss as detailed in Section 5.
 All job releases of higher priority tasks are considered.
 The state pruning introduced in Section 6.1 is used
@@ -52,10 +52,10 @@ The state pruning introduced in Section 6.1 is used
 'pruned' tracks the number of states for each time point after pruning '''
 def calculate_pruneCON(tasks, prob_abnormal, probabilties, states, pruned, numD):
     tasks = sort(tasks, 'deadline', False)
-    deadline = tasks[len(tasks)-1]['deadline']*numD
-    min_time = TDA.min_time(tasks, 'execution')
+    deadline = tasks[len(tasks)-1]['deadline']
+    min_time = TDA.min_time(tasks, 'execution', numD)
     tasks = sort(tasks, 'execution', True)
-    all_times = all_releases(tasks, deadline)
+    all_times = all_releases(tasks, deadline*numD)
     times = []
     for i in all_times:
         if i > min_time:
@@ -79,6 +79,7 @@ The state pruning introduced in Section 6.1 is used
 'probabilities' tracks the calculated probabilities for each time point
 'states' tracks the number of states for each time point
 'pruned' tracks the number of states for each time point after pruning '''
+'''
 def calculate_prune(tasks, prob_abnormal, probabilties, states, pruned):
     tasks = sort(tasks, 'deadline', False)
     deadline = tasks[len(tasks)-1]['deadline']
@@ -99,6 +100,7 @@ def calculate_prune(tasks, prob_abnormal, probabilties, states, pruned):
             probability = probabilties[i]
     return probability
 
+'''
 ''' Calculates the probability of deadline miss as detailed in Section 5.
 All job releases of higher priority tasks are considered.
 The state pruning introduced in Section 6.1 is used
@@ -112,6 +114,7 @@ reduction for all binomial representations.
 'states' tracks the number of states for each time point
 'pruned' tracks the number of states for each time point after pruning
 'max_error' tracks the maximum possible error that can occur after the reduction '''
+'''
 def calculate_prune_reduct(tasks, prob_abnormal, probabilties, states, pruned, max_error, max_error_allowed):
     tasks = sort(tasks, 'deadline', False)
     deadline = tasks[len(tasks)-1]['deadline']
@@ -134,6 +137,7 @@ def calculate_prune_reduct(tasks, prob_abnormal, probabilties, states, pruned, m
             probability = probabilties[i]
     return probability
 
+'''
 ''' Approximates the probability of deadline miss as detailed in Section 5
 by only considering the last release of all higher priority tasks.
 The state pruning introduced in Section 6.1 is used
@@ -143,6 +147,7 @@ The state pruning introduced in Section 6.1 is used
 'probabilities' tracks the calculated probabilities for each time point
 'states' tracks the number of states for each time point
 'pruned' tracks the number of states for each time point after pruning '''
+'''
 def approximate_prune(tasks, prob_abnormal, probabilties, states, pruned):
     tasks = sort(tasks, 'deadline', False)
     deadline = tasks[len(tasks)-1]['deadline']
@@ -157,50 +162,9 @@ def approximate_prune(tasks, prob_abnormal, probabilties, states, pruned):
         if (probabilties[i]<probability):
             probability = probabilties[i]
     return probability
-
-''' KHCHEN: Extension for consecutive deadline misses based on the convolution based approach by Maxim and Cucu-Grosjean [17]'''
-def convolutionCON(tasks, prob_abnormal, probabilties, states, numD):
-    tasks = sort(tasks, 'deadline', False)
-    deadline = tasks[len(tasks)-1]['deadline']*numD
-    releases = []
-    times = []
-    calculate_releases(tasks, deadline, releases, prob_abnormal)
-    releases = sorted(releases, key=lambda release:release[0]['time'])
-    min_time = TDA.min_time(tasks, 'execution')
-    tasks = sort(tasks, 'execution', True)
-    all_times = all_releases(tasks, deadline)
-    distri = empty_distri()
-    t = 0.0
-    #print 'releases: ' + repr(len(releases))
-    #print 'states: ' + repr(math.pow(2,len(releases)))
-    while (t < deadline):
-        i = 0
-        #print len(distri)
-        job = releases[0]
-        while(job[0]['time']== t):
-            distri = convolute(distri, job)
-            del releases[0]
-            if len(releases) > 0:
-                job = releases[0]
-            else:
-                break
-            i = i + 1
-        if len(releases) > 0:
-            t = job[0]['time']
-        else:
-            t = deadline
-        prob = calculate_miss_prob(distri, t)
-        probabilties.append(prob)
-        times.append(t)
-    states.append(len(distri))
-    probability = 1
-    for i in range(0, len(probabilties),1):
-        if (probabilties[i]<probability):
-            probability = probabilties[i]
-    return probability
-
-
+'''
 ''' The convolution based approach by Maxim and Cucu-Grosjean [17]'''
+'''
 def convolution(tasks, prob_abnormal, probabilties, states):
     tasks = sort(tasks, 'deadline', False)
     deadline = tasks[len(tasks)-1]['deadline']
@@ -240,8 +204,9 @@ def convolution(tasks, prob_abnormal, probabilties, states):
         if (probabilties[i]<probability):
             probability = probabilties[i]
     return probability
-
+'''
 ''' The convolution based approach by Maxim and Cucu-Grosjean [17] with state merging'''
+'''
 def convolution_merge(tasks, prob_abnormal, probabilties, states, pruned):
     tasks = sort(tasks, 'deadline', False)
     deadline = tasks[len(tasks)-1]['deadline']
@@ -280,8 +245,9 @@ def convolution_merge(tasks, prob_abnormal, probabilties, states, pruned):
         if (probabilties[i]<probability):
             probability = probabilties[i]
     return probability
-
+'''
 ''' Calculates the deadline miss probability for a given point in time'''
+
 def calculate_probabiltiy(tasks, time, prob_abnormal, states):
     order = sort(tasks, 'execution', True)
     distributions = []
