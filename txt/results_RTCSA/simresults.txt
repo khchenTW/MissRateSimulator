@@ -1,0 +1,267 @@
+0:00:00.242 - EPST starts
+0:00:05.735 - EPST finishes
+0:00:05.492 - elapsed
+0:00:05.735 - convolution starts
+0:00:05.737 - convolution finishes
+0:00:00.002 - elapsed
+0:00:05.737 - simulator starts
+0:02:23.446 - simulator finishes
+0:02:17.708 - elapsed
+0:02:23.446 - EPST starts
+0:02:25.337 - EPST finishes
+0:00:01.891 - elapsed
+0:02:25.337 - convolution starts
+0:02:25.345 - convolution finishes
+0:00:00.008 - elapsed
+0:02:25.345 - simulator starts
+0:07:03.548 - simulator finishes
+0:04:38.202 - elapsed
+0:07:03.548 - EPST starts
+0:07:05.536 - EPST finishes
+0:00:01.987 - elapsed
+0:07:05.536 - convolution starts
+0:07:05.559 - convolution finishes
+0:00:00.022 - elapsed
+0:07:05.559 - simulator starts
+0:13:50.240 - simulator finishes
+0:06:44.681 - elapsed
+0:13:50.240 - EPST starts
+0:13:59.546 - EPST finishes
+0:00:09.305 - elapsed
+0:13:59.546 - convolution starts
+0:13:59.547 - convolution finishes
+0:00:00.001 - elapsed
+0:13:59.547 - simulator starts
+0:15:22.926 - simulator finishes
+0:01:23.378 - elapsed
+0:15:22.926 - EPST starts
+0:15:24.638 - EPST finishes
+0:00:01.712 - elapsed
+0:15:24.639 - convolution starts
+0:15:24.650 - convolution finishes
+0:00:00.011 - elapsed
+0:15:24.650 - simulator starts
+0:20:27.148 - simulator finishes
+0:05:02.498 - elapsed
+0:20:27.148 - EPST starts
+0:20:29.807 - EPST finishes
+0:00:02.658 - elapsed
+0:20:29.807 - convolution starts
+0:20:29.811 - convolution finishes
+0:00:00.004 - elapsed
+0:20:29.811 - simulator starts
+0:24:07.009 - simulator finishes
+0:03:37.198 - elapsed
+0:24:07.009 - EPST starts
+0:24:09.442 - EPST finishes
+0:00:02.432 - elapsed
+0:24:09.442 - convolution starts
+0:24:09.445 - convolution finishes
+0:00:00.003 - elapsed
+0:24:09.445 - simulator starts
+0:27:00.986 - simulator finishes
+0:02:51.540 - elapsed
+0:27:00.986 - EPST starts
+0:27:02.976 - EPST finishes
+0:00:01.989 - elapsed
+0:27:02.976 - convolution starts
+0:27:02.985 - convolution finishes
+0:00:00.009 - elapsed
+0:27:02.985 - simulator starts
+0:31:45.630 - simulator finishes
+0:04:42.644 - elapsed
+0:31:45.630 - EPST starts
+0:31:47.439 - EPST finishes
+0:00:01.809 - elapsed
+0:31:47.440 - convolution starts
+0:31:47.446 - convolution finishes
+0:00:00.006 - elapsed
+0:31:47.446 - simulator starts
+0:36:03.626 - simulator finishes
+0:04:16.179 - elapsed
+0:36:03.626 - EPST starts
+0:36:06.605 - EPST finishes
+0:00:02.979 - elapsed
+0:36:06.605 - convolution starts
+0:36:06.621 - convolution finishes
+0:00:00.016 - elapsed
+0:36:06.621 - simulator starts
+0:41:50.392 - simulator finishes
+0:05:43.771 - elapsed
+0:41:50.392 - EPST starts
+0:41:52.334 - EPST finishes
+0:00:01.941 - elapsed
+0:41:52.334 - convolution starts
+0:41:52.358 - convolution finishes
+0:00:00.024 - elapsed
+0:41:52.358 - simulator starts
+0:49:05.012 - simulator finishes
+0:07:12.653 - elapsed
+0:49:05.012 - EPST starts
+0:49:07.716 - EPST finishes
+0:00:02.704 - elapsed
+0:49:07.716 - convolution starts
+0:49:07.726 - convolution finishes
+0:00:00.010 - elapsed
+0:49:07.726 - simulator starts
+0:54:29.297 - simulator finishes
+0:05:21.570 - elapsed
+0:54:29.297 - EPST starts
+0:54:37.206 - EPST finishes
+0:00:07.908 - elapsed
+0:54:37.206 - convolution starts
+0:54:37.207 - convolution finishes
+0:00:00.001 - elapsed
+0:54:37.207 - simulator starts
+0:56:01.891 - simulator finishes
+0:01:24.684 - elapsed
+0:56:01.892 - EPST starts
+0:56:04.638 - EPST finishes
+0:00:02.746 - elapsed
+0:56:04.638 - convolution starts
+0:56:04.678 - convolution finishes
+0:00:00.040 - elapsed
+0:56:04.678 - simulator starts
+1:04:20.328 - simulator finishes
+0:08:15.649 - elapsed
+1:04:20.328 - EPST starts
+1:04:23.555 - EPST finishes
+0:00:03.226 - elapsed
+1:04:23.555 - convolution starts
+1:04:23.613 - convolution finishes
+0:00:00.058 - elapsed
+1:04:23.613 - simulator starts
+1:13:15.830 - simulator finishes
+0:08:52.216 - elapsed
+1:13:15.830 - EPST starts
+1:13:24.169 - EPST finishes
+0:00:08.339 - elapsed
+1:13:24.169 - EPST starts
+1:13:26.938 - EPST finishes
+0:00:02.769 - elapsed
+1:13:26.938 - convolution starts
+1:13:26.949 - convolution finishes
+0:00:00.010 - elapsed
+1:13:26.949 - simulator starts
+1:18:29.516 - simulator finishes
+0:05:02.567 - elapsed
+1:18:29.516 - EPST starts
+1:18:32.584 - EPST finishes
+0:00:03.067 - elapsed
+1:18:32.584 - convolution starts
+1:18:32.591 - convolution finishes
+0:00:00.007 - elapsed
+1:18:32.591 - simulator starts
+1:22:26.510 - simulator finishes
+0:03:53.919 - elapsed
+1:22:26.510 - EPST starts
+1:22:30.546 - EPST finishes
+0:00:04.036 - elapsed
+1:22:30.546 - convolution starts
+1:22:30.614 - convolution finishes
+0:00:00.067 - elapsed
+1:22:30.614 - simulator starts
+1:32:09.497 - simulator finishes
+0:09:38.882 - elapsed
+1:32:09.497 - EPST starts
+1:32:11.329 - EPST finishes
+0:00:01.832 - elapsed
+1:32:11.329 - convolution starts
+1:32:11.335 - convolution finishes
+0:00:00.005 - elapsed
+1:32:11.335 - simulator starts
+1:36:08.044 - simulator finishes
+0:03:56.709 - elapsed
+1:36:08.044 - EPST starts
+1:36:09.995 - EPST finishes
+0:00:01.950 - elapsed
+1:36:09.995 - convolution starts
+1:36:10.040 - convolution finishes
+0:00:00.044 - elapsed
+1:36:10.040 - simulator starts
+1:44:52.734 - simulator finishes
+0:08:42.693 - elapsed
+1:44:52.734 - EPST starts
+1:44:55.482 - EPST finishes
+0:00:02.747 - elapsed
+1:44:55.482 - convolution starts
+1:44:55.488 - convolution finishes
+0:00:00.006 - elapsed
+1:44:55.488 - simulator starts
+1:48:52.845 - simulator finishes
+0:03:57.356 - elapsed
+1:48:52.845 - EPST starts
+1:48:54.824 - EPST finishes
+0:00:01.979 - elapsed
+1:48:54.824 - convolution starts
+1:48:54.828 - convolution finishes
+0:00:00.003 - elapsed
+1:48:54.828 - simulator starts
+1:52:08.614 - simulator finishes
+0:03:13.785 - elapsed
+1:52:08.614 - EPST starts
+1:52:13.327 - EPST finishes
+0:00:04.713 - elapsed
+1:52:13.327 - convolution starts
+1:52:13.333 - convolution finishes
+0:00:00.005 - elapsed
+1:52:13.333 - simulator starts
+1:55:47.097 - simulator finishes
+0:03:33.764 - elapsed
+1:55:47.097 - EPST starts
+1:55:58.614 - EPST finishes
+0:00:11.516 - elapsed
+1:55:58.614 - convolution starts
+1:55:58.626 - convolution finishes
+0:00:00.011 - elapsed
+1:55:58.626 - simulator starts
+2:00:35.268 - simulator finishes
+0:04:36.641 - elapsed
+2:00:35.268 - EPST starts
+2:00:38.112 - EPST finishes
+0:00:02.843 - elapsed
+2:00:38.112 - convolution starts
+2:00:38.112 - convolution finishes
+0:00:00.000 - elapsed
+2:00:38.112 - simulator starts
+2:01:41.200 - simulator finishes
+0:01:03.087 - elapsed
+2:01:41.200 - EPST starts
+2:01:43.943 - EPST finishes
+0:00:02.743 - elapsed
+2:01:43.943 - convolution starts
+2:01:43.947 - convolution finishes
+0:00:00.003 - elapsed
+2:01:43.947 - simulator starts
+2:04:33.147 - simulator finishes
+0:02:49.199 - elapsed
+2:04:33.147 - EPST starts
+2:04:34.929 - EPST finishes
+0:00:01.782 - elapsed
+2:04:34.929 - convolution starts
+2:04:34.934 - convolution finishes
+0:00:00.004 - elapsed
+2:04:34.934 - simulator starts
+2:08:11.667 - simulator finishes
+0:03:36.733 - elapsed
+2:08:11.667 - EPST starts
+2:08:24.283 - EPST finishes
+0:00:12.616 - elapsed
+2:08:24.284 - EPST starts
+2:08:26.108 - EPST finishes
+0:00:01.824 - elapsed
+2:08:26.108 - convolution starts
+2:08:26.113 - convolution finishes
+0:00:00.004 - elapsed
+2:08:26.113 - simulator starts
+2:12:20.782 - simulator finishes
+0:03:54.668 - elapsed
+Result for fr4_uti75
+SimRateList:
+[8.45e-05, 9.4e-05, 9.35e-05, 9.7e-05, 0.000105, 0.000186, 0.000101, 0.0001055, 9.4e-05, 9.7e-05, 0.000184, 0.000182, 0.0001035, 0.000206, 0.000111, 0.000205, 0.0001025, 0.000106, 9.25e-05, 0.000213, 0.000101, 8.95e-05, 8.85e-05, 0.0, 0.000207, 9.65e-05, 9.05e-05, 0.000243]
+ExpectedMissRate:
+[0.0139450629923560, 0.0162080930165612, 0.00839879405437142, 0.138437021519246, 0.00663733900833972, 0.0389274708069242, 0.00231197003297432, 0.00568520020691726, 0.0135173451330998, 0.000245024189468552, 0.0430670974824760, 0.0487444703580032, 0.0981640264251833, 0.0374159686448752, 0.00179877954996446, 0.0304324433713488, 0.000853877971175162, 0.00160735368262164, 0.0141213676838256, 0.0345369667805539, 0.0177943976360550, 0.00925867834967103,
+0.000258134467239860, 0.00102879870692213, 0.105410030290883, 0.000854470767647069, 0.0170310283779263, 0.0290942887226923]
+ConMissRate:
+[0.0010053685517187949031, 0.0010050283581860040246, 0.0010050109468929518394, 0.0010030602488507495633, 0.0010050109468794092278, 0.0030148929435695472194, 0.0010020093387333380717, 0.0010050109472946719814, 0.0010050221798409180395, 0.0010020009969879950499, 0.0030148929435695472194, 0.0030148929435695472194, 0.0010050362727498393625, 0.0030148929435695472194, 0.0010020009989874518292, 0.0030148929435695472194, 0.0010020009971426968134, 0.0010020025172624208554,
+0.0010050221798561057422, 0.0030148929435695472194, 0.0010068847464266960405, 0.0010050164813971228616, 0.0010000337727699791769, 6.5561497176718002027e-08, 0.0030148929435695472194, 0.0010020009999315654303, 0.0010050176623350693234, 0.0030148929435695472194]
