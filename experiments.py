@@ -15,17 +15,19 @@ import mixed_task_builder
 hardTaskFactor = [1.83]
 
 # Setting for Fig4:
-# faultrate must be in the range between 0 and 1
 #faultRate = [10**-4]
-# this list is used to generate a readible name of output.
 #power = [4]
-# this is U^N_{SUM}
 #utilization = [70]
 
+# Setting for Fig5:
+faultRate = [10**-4]
+power = [4]
+utilization = [75]
+
 # Setting for Fig6:
-faultRate = [10**-2, 10**-4, 10**-6]
-power = [2, 4, 6]
-utilization = [50, 70]
+#faultRate = [10**-2, 10**-4, 10**-6]
+#power = [2, 4, 6]
+#utilization = [70]
 
 sumbound = 4
 # for the motivational example
@@ -227,17 +229,20 @@ def experiments_emr(n, por, fr, uti, inputfile ):
 def trendsOfPhiMI(n, por, fr, uti, inputfile):
     tasksets = np.load(inputfile+'.npy')
 
-    stampPHIEMR = []
-    stampPHICON = []
     ClistRes = []
     listRes = []
     xlistRes = []
+    timeEMR = []
+    timeCON = []
     for tasks in tasksets:
         CResults = []
         Results = []
         xResults = []
+        stampPHIEMR = []
+        stampPHICON = []
 
         for x in range(1, 11):
+        #for x in range(1, 4):
             timing.tlog_start("Phi j starts", 1)
             r = EPST.probabilisticTest_k(n-1, tasks, x, Chernoff_bounds, 1)
             timing.tlog_end("Phi j finishes", stampPHIEMR, 1)
@@ -245,6 +250,7 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
             Results.append(r)
             xResults.append(r*x)
             if x < 8:
+            #if x < 2:
                 probs = []
                 states = []
                 pruned = []
@@ -252,6 +258,8 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
                 c = deadline_miss_probability.calculate_pruneCON(tasks, 0.001, probs, states, pruned, x)
                 timing.tlog_end("Phi CON finishes", stampPHICON, 1)
                 CResults.append(c)
+        timeEMR.append(stampPHIEMR)
+        timeCON.append(stampPHICON)
         xlistRes.append(xResults)
         ClistRes.append(CResults)
         listRes.append(Results)
@@ -288,19 +296,19 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
 
     ofile = "txt/trendsTIME_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
     fo = open(ofile, "wb")
-    fo.write("CON Analysis Time")
+    fo.write("EMR Analysis Time")
     fo.write("\n")
     fo.write("[")
-    for item in stampPHIEMR:
+    for item in timeEMR:
         fo.write(str(item))
         fo.write(",")
     fo.write("]")
     fo.write("\n")
 
-    fo.write("EMR Analysis Time")
+    fo.write("CON Analysis Time")
     fo.write("\n")
     fo.write("[")
-    for item in stampPHICON:
+    for item in timeCON:
         fo.write(str(item))
         fo.write(",")
     fo.write("]")
