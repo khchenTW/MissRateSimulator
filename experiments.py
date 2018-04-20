@@ -4,6 +4,7 @@ from simulator import MissRateSimulator
 import sys
 import numpy as np
 import timing
+import time
 #import cprta #this is from SIES'17
 import deadline_miss_probability #this is from ECRTS'18
 import decimal
@@ -20,14 +21,14 @@ hardTaskFactor = [1.83]
 #utilization = [70]
 
 # Setting for Fig5:
-faultRate = [10**-4]
-power = [4]
-utilization = [75]
+#faultRate = [10**-4]
+#power = [4]
+#utilization = [75]
 
 # Setting for Fig6:
-#faultRate = [10**-2, 10**-4, 10**-6]
-#power = [2, 4, 6]
-#utilization = [70]
+faultRate = [10**-2, 10**-4, 10**-6]
+power = [2, 4, 6]
+utilization = [50]
 
 sumbound = 4
 # for the motivational example
@@ -243,20 +244,24 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
 
         for x in range(1, 11):
         #for x in range(1, 4):
-            timing.tlog_start("Phi j starts", 1)
+            t1 = time.clock()
             r = EPST.probabilisticTest_k(n-1, tasks, x, Chernoff_bounds, 1)
-            timing.tlog_end("Phi j finishes", stampPHIEMR, 1)
+            t2 = time.clock()
+            diff = t2-t1
+            stampPHIEMR.append(diff)
 
             Results.append(r)
             xResults.append(r*x)
             if x < 8:
-            #if x < 2:
+            #if x < 3:
                 probs = []
                 states = []
                 pruned = []
-                timing.tlog_start("Phi CON starts", 1)
+                t3 = time.clock()
                 c = deadline_miss_probability.calculate_pruneCON(tasks, 0.001, probs, states, pruned, x)
-                timing.tlog_end("Phi CON finishes", stampPHICON, 1)
+                t4 = time.clock()
+                diff = t4-t3
+                stampPHICON.append(diff)
                 CResults.append(c)
         timeEMR.append(stampPHIEMR)
         timeCON.append(stampPHICON)
