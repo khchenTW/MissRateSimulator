@@ -3,42 +3,48 @@ from bounds import *
 from simulator import MissRateSimulator
 import sys
 import numpy as np
-import timing
-import cprta
+import time
+import deadline_miss_probability #this is from ECRTS'18
 import decimal
-import TDA
+import TDA # this is enhanced from ECRTS'18
 import EPST
 import task_generator
 import mixed_task_builder
 
-faultRate = [10**-4]
-#faultrate must be in the range between 0 and 1
-hardTaskFactor = [2.2/1.2]
-# this list is used to generate a readible name of output.
-power = [4]
-utilization = [75]
+hardTaskFactor = [1.83]
+
+# Setting for Fig4:
+#faultRate = [10**-4]
+#power = [4]
+#utilization = [70]
+
+# Setting for Fig5:
+#faultRate = [10**-4]
+#power = [4]
+#utilization = [75]
+
+# Setting for Fig6:
+faultRate = [10**-2, 10**-4, 10**-6]
+power = [2, 4, 6]
+utilization = [60]
+
 sumbound = 4
-jobnum = 5000000
+# for the motivational example
+#jobnum = 5000000
+# for the evalutions
+jobnum = 2000000
 lookupTable = []
 conlookupTable = []
-'''
-lookupTable = [[-1 for x in range(sumbound+3)] for y in range(n)]
-conlookupTable = [[-1 for x in range(sumbound+3)] for y in range(n)]
-'''
 
 # for task generation
 def taskGeneWithTDA(uti, fr, n):
     while (1):
         tasks = task_generator.taskGeneration_p(n,uti)
-        tasks = mixed_task_builder.hardtaskWCET(tasks, hardTaskFactor[0], fr)
-        #keepTasks = tasks[:]
-        #for i in tasks:
-            #print i['period']
-            #print i
+        #tasks = task_generator.taskGeneration_rounded(n, uti)
+        tasks = mixed_task_builder.mixed_task_set(tasks, hardTaskFactor[0], fr)
 
         if TDA.TDAtest( tasks ) == 0:
             #success, if even normal TDA cannot pass, our estimated missrate is really worse.
-            #test(n-1, tasks)
             break
         else:
             #fail
@@ -50,16 +56,6 @@ def taskSetInput(n, uti, fr, por, tasksets_amount, part, filename):
     np.save(filename, tasksets)
     return filename
 
-# Example of Periodic Implicit deadline case in the paper (without normal execution)
-#tasks = []
-#tasks.append({'period': 2, 'abnormal_exe': 1, 'deadline': 2, 'execution': 1, 'type': 'hard', 'prob': 1e-06})
-#tasks.append({'period': 5, 'abnormal_exe': 1, 'deadline': 5, 'execution': 3, 'type': 'hard', 'prob': 1e-06})
-
-# Example of Periodic Implicit deadline case in the paper (without normal execution)
-#tasks = []
-#tasks.append({'period': 2, 'abnormal_exe': 1, 'deadline': 2, 'execution': 1, 'type': 'hard', 'prob': 1e-06})
-#tasks.append({'period': 8, 'abnormal_exe': 1, 'deadline': 5, 'execution': 5, 'type': 'hard', 'prob': 1e-06})
-
 def lookup(k, tasks, numDeadline, mode):
     global lookupTable
     global conlookupTable
@@ -69,11 +65,15 @@ def lookup(k, tasks, numDeadline, mode):
         return lookupTable[k][numDeadline]
     else:
         if conlookupTable[k][numDeadline] == -1:
-            conlookupTable[k][numDeadline] = cprta.cprtao(tasks, numDeadline)
+            #for ECRTS
+            probs = []
+            states = []
+            pruned = []
+            conlookupTable[k][numDeadline] = deadline_miss_probability.calculate_pruneCON(tasks, 0.001, probs, states, pruned, numDeadline)
         return conlookupTable[k][numDeadline]
 
 def Approximation(n, J, k, tasks, mode=0):
-    # mode 0 == EPST, 1 = CPRTA
+    # mode 0 == EMR, 1 = CON
     # J is the bound of the idx
     if mode == 0:
         global lookupTable
@@ -82,24 +82,9 @@ def Approximation(n, J, k, tasks, mode=0):
         global conlookupTable
         conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
 
-    #print 'Approximation mode: '+str(mode)
     probsum = 0
     for x in range(1, J+1):
         probsum += lookup(k, tasks, x, mode)*x
-        #print 'precise part:'
-        #print probsum
-    '''
-    if lookup(k, tasks, J, mode)!= 0:
-        if lookup(k, tasks, J+1, mode) != lookup(k, tasks, J, mode):
-            r = decimal.Decimal(lookup(k, tasks, J+1, mode)/lookup(k, tasks, J, mode))
-            print "r="+str(decimal.Decimal(r))
-        else:
-            print "bug: r is not correct"
-            return -1
-        probsum += decimal.Deciaml(lookup(k, tasks, J, mode)/(1-r))
-        print 'approximation part:'
-        print probsum
-    '''
 
     if probsum == 0:
         return 0
@@ -112,10 +97,8 @@ def Approximation(n, J, k, tasks, mode=0):
 
 def experiments_sim(n, por, fr, uti, inputfile):
 
-    totalRateList = []
     SimRateList = []
-    ExpectedTotalRate = []
-    ExpectedMaxRate = []
+    ExpectedMissRate = []
     ConMissRate = []
     stampCON = []
     stampEPST = []
@@ -129,121 +112,109 @@ def experiments_sim(n, por, fr, uti, inputfile):
         simulator=MissRateSimulator(n, tasks)
 
         # EPST + Theorem2
-        # Assume the lowest priority task has maximum...
+        # report the miss rate of the lowest priority task
 
         lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
         conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
 
-        timing.tlog_start("EPST starts", 1)
         tmp = Approximation(n, sumbound, n-1, tasks, 0)
-        timing.tlog_end("EPST finishes", stampEPST, 1)
         if tmp < 10**-4:
             continue
         else:
-            ExpectedMaxRate.append(tmp)
-            timing.tlog_start("convolution starts", 1)
+            ExpectedMissRate.append(tmp)
             ConMissRate.append(Approximation(n, sumbound, n-1, tasks, 1))
-            timing.tlog_end("convolution finishes", stampCON, 1)
 
-
-        timing.tlog_start("simulator starts", 1)
         simulator.dispatcher(jobnum, fr)
         SimRateList.append(simulator.missRate(n-1))
-        timing.tlog_end("simulator finishes", simulator.stampSIM, 1)
 
     print "Result for fr"+str(power[por])+"_uti"+str(uti)
     print "SimRateList:"
     print SimRateList
-    print "ExpectedMaxRate:"
-    print ExpectedMaxRate
+    print "ExpectedMissRate:"
+    print ExpectedMissRate
     print "ConMissRate:"
     print ConMissRate
 
 
-    ofile = "txt/results_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
+    ofile = "txt/COMPARISON_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
     fo = open(ofile, "wb")
     fo.write("SimRateList:")
     fo.write("\n")
-    fo.write("[")
-    for item in SimRateList:
-        fo.write(str(item))
-        fo.write(",")
-    fo.write("]")
+    fo.write(str(SimRateList))
     fo.write("\n")
     fo.write("ConMissRate:")
     fo.write("\n")
-    fo.write("[")
-    for item in ConMissRate:
-        fo.write(str(item))
-        fo.write(",")
-    fo.write("]")
+    fo.write(str(ConMissRate))
     fo.write("\n")
-    fo.write("ExpectedMaxRate:")
+    fo.write("ExpectedMissRate:")
     fo.write("\n")
-    fo.write("[")
-    for item in ExpectedMaxRate:
-        fo.write(str(item))
-        fo.write(",")
-    fo.write("]")
+    fo.write(str(ExpectedMissRate))
     fo.write("\n")
     fo.close()
 
 
 def experiments_emr(n, por, fr, uti, inputfile ):
-    #just use to quickly get emr
     tasksets = np.load(inputfile+'.npy')
     stampPHIEMR = []
     stampPHICON = []
 
     ConMissRate = []
     ExpectedMissRate = []
+    print "number of tasksets:"+str(len(tasksets))
     for tasks in tasksets:
-    #tasks = tasksets[0]
-        timing.tlog_start("EMR start", 1)
         ExpectedMissRate.append(Approximation(n, sumbound, n-1, tasks, 0))
-        timing.tlog_end("EMR finishes", stampPHIEMR, 1)
-        timing.tlog_start("CON start", 1)
-        ConMissRate.append(Approximation(n, sumbound, n-1, tasks, 1))
-        timing.tlog_end("CON finishes", stampPHICON, 1)
 
     print "Result for fr"+str(power[por])+"_uti"+str(uti)
     print "ExpMissRate:"
     print ExpectedMissRate
-    print "ConExpMissRate:"
-    print ConMissRate
 
+    ofile = "txt/EMR_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
+    fo = open(ofile, "wb")
+    fo.write("Expected Miss Rate:")
+    fo.write("\n")
+    fo.write(str(ExpectedMissRate))
+    fo.write("\n")
+    fo.close()
 
 def trendsOfPhiMI(n, por, fr, uti, inputfile):
     tasksets = np.load(inputfile+'.npy')
-
-    ExpectedMissRate = []
-    stampPHIEMR = []
-    stampPHICON = []
-    CResults = []
-    Results = []
-    xRestuls = []
     ClistRes = []
     listRes = []
     xlistRes = []
+    timeEMR = []
+    timeCON = []
     for tasks in tasksets:
+        CResults = []
         Results = []
-        IResults = []
-        for x in range(1, 11):
-            timing.tlog_start("Phi EMR starts", 1)
-            r = EPST.probabilisticTest_k(n-1, tasks, x, Chernoff_bounds, 1)
-            timing.tlog_end("Phi EMR finishes", stampPHIEMR, 1)
-            timing.tlog_start("EMR start", 1)
-            ExpectedMissRate.append(Approximation(n, sumbound, n-1, tasks, 0))
-            timing.tlog_end("EMR finishes", stampPHIEMR, 1)
+        xResults = []
+        stampPHIEMR = []
+        stampPHICON = []
 
-            #timing.tlog_start("Phi CON starts", 1)
-            #c = cprta.cprtao(tasks, x)
-            #timing.tlog_end("Phi CON finishes", stampPHICON, 1)
+        for x in range(1, 11):
+        #for x in range(1, 4):
+            t1 = time.clock()
+            r = EPST.probabilisticTest_k(n-1, tasks, x, Chernoff_bounds, 1)
+            t2 = time.clock()
+            diff = t2-t1
+            stampPHIEMR.append(diff)
+
             Results.append(r)
-            #CResults.append(c)
-            xRestuls.append(r*x)
+            xResults.append(r*x)
+            if x < 8:
+            #if x < 3:
+                probs = []
+                states = []
+                pruned = []
+                t3 = time.clock()
+                c = deadline_miss_probability.calculate_pruneCON(tasks, 0.001, probs, states, pruned, x)
+                t4 = time.clock()
+                diff = t4-t3
+                stampPHICON.append(diff)
+                CResults.append(c)
+        timeEMR.append(stampPHIEMR)
+        timeCON.append(stampPHICON)
         xlistRes.append(xResults)
-        #ClistRes.append(CResults)
+        ClistRes.append(CResults)
         listRes.append(Results)
 
     ofile = "txt/trendsC_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
@@ -251,9 +222,9 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
     fo.write("CPhi")
     fo.write("\n")
     for item in ClistRes:
-        print item
         fo.write(str(item))
         fo.write("\n")
+    fo.write("\n")
     fo.close()
 
     ofile = "txt/trendsE_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
@@ -261,9 +232,9 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
     fo.write("EPhi")
     fo.write("\n")
     for item in listRes:
-        print item
         fo.write(str(item))
         fo.write("\n")
+    fo.write("\n")
     fo.close()
 
     ofile = "txt/trendsX_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
@@ -271,22 +242,43 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
     fo.write("EPhi*j")
     fo.write("\n")
     for item in xlistRes:
-        print item
         fo.write(str(item))
         fo.write("\n")
+    fo.write("\n")
+    fo.close()
+
+    ofile = "txt/trendsTIME_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
+    fo = open(ofile, "wb")
+    fo.write("EMR Analysis Time")
+    fo.write("\n")
+    fo.write("[")
+    for item in timeEMR:
+        fo.write(str(item))
+        fo.write(",")
+    fo.write("]")
+    fo.write("\n")
+
+    fo.write("CON Analysis Time")
+    fo.write("\n")
+    fo.write("[")
+    for item in timeCON:
+        fo.write(str(item))
+        fo.write(",")
+    fo.write("]")
+    fo.write("\n")
+
     fo.close()
 
 def experiments_art(n, por, fr, uti, inputfile):
-
+    # this is for artifical test (motivational example)
     SimRateList = []
     tasksets = []
     sets = 20
 
-    #this for artifical test
 
     tasks = []
-    tasks.append({'period': 3, 'abnormal_exe': 2, 'deadline': 3, 'execution': 2, 'type': 'hard', 'prob': 0})
-    tasks.append({'period': 5, 'abnormal_exe': 2.25, 'deadline': 5, 'execution': 1, 'type': 'hard', 'prob': 5e-01})
+    tasks.append({'period': 3, 'abnormal_exe': 2, 'deadline': 3, 'execution': 2, 'prob': 0})
+    tasks.append({'period': 5, 'abnormal_exe': 2.25, 'deadline': 5, 'execution': 1, 'prob': 5e-01})
 
     for x in range(sets):
         tasksets.append(tasks)
@@ -294,11 +286,8 @@ def experiments_art(n, por, fr, uti, inputfile):
     for tasks in tasksets:
 
         simulator=MissRateSimulator(n, tasks)
-
-        timing.tlog_start("simulator starts", 1)
         simulator.dispatcher(jobnum, 0.5)
         SimRateList.append(simulator.missRate(n-1))
-        timing.tlog_end("simulator finishes", simulator.stampSIM, 1)
 
     print "Result for fr"+str(power[por])+"_uti"+str(uti)
     print "SimRateList:"
@@ -316,8 +305,6 @@ def experiments_art(n, por, fr, uti, inputfile):
     fo.write("]")
     fo.write("\n")
     fo.close()
-
-
 
 def main():
     args = sys.argv
@@ -340,16 +327,16 @@ def main():
                 print "Generate Task sets:"
                 print np.load(fileInput+'.npy')
             elif mode == 1:
-                #use to quickly get emr without simulation
+                # used to get emr without simulation
                 experiments_emr(n, por, fr, uti, filename)
             elif mode == 2:
-                #use to get sim results together with emr
+                # used to get sim results together with emr
                 experiments_sim(n, por, fr, uti, filename)
             elif mode == 3:
-                #use to get the relationship between phi and phi*i to show the converage.
+                # used to get the relationship between phi and phi*i to show the converage.
                 trendsOfPhiMI(n, por, fr, uti, filename)
             elif mode == 4:
-                #use  to present the example illustrating the differences between the miss rate and the probability of deadline misses.
+                # used to present the example illustrating the differences between the miss rate and the probability of deadline misses.
                 experiments_art(n, por, fr, uti, filename)
             else:
                 raise NotImplementedError("Error: you use a mode without implementation")

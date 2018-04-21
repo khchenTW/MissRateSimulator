@@ -1,5 +1,34 @@
 from __future__ import division
 import math
+import random
+import numpy
+
+def determineWorkload(task, higherPriorityTasks, criteria, time):
+    workload = task[criteria]
+    for i in higherPriorityTasks:
+        jobs = math.ceil(time / i['period'])
+        workload += jobs * i[criteria]
+    return workload
+
+def min_time(tasks, criteria, numD):
+    # test deadline first
+    #workload = determineWorkload(task, higherPriorityTasks, criteria, task['deadline'])
+    # initiate starting time for recursive TDA
+    copy = list(tasks)
+    task = copy[len(copy)-1]
+    del copy[len(copy)-1]
+    t = task[criteria]
+    for i in copy:
+        t += i[criteria]
+    # resursive TDA
+    while(t < task['deadline']*numD):
+        workload = determineWorkload(task, copy, criteria, t)
+        if workload <= t:
+            return t
+        else:
+            t = workload
+    return -1
+
 
 def Workload_Contrained(T,C,t):
     return C*math.ceil((t)/T)
@@ -33,4 +62,5 @@ def TDAtest(tasks):
         x+=1
     return fail
 
-
+def sort(tasks, criteria, reverse_order):
+    return sorted(tasks, key=lambda item:item[criteria], reverse=reverse_order)
