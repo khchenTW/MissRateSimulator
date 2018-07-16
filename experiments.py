@@ -11,6 +11,14 @@ import EPST
 import task_generator
 import mixed_task_builder
 
+# for experiment 5
+import matplotlib
+# matplotlib.use('Agg')
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib import rcParams
+
 hardTaskFactor = [1.83]
 
 # Setting for Fig4:
@@ -24,8 +32,13 @@ hardTaskFactor = [1.83]
 #utilization = [75]
 
 # Setting for Fig6:
-faultRate = [10**-2, 10**-4, 10**-6]
-power = [2, 4, 6]
+# faultRate = [10**-2, 10**-4, 10**-6]
+# power = [2, 4, 6]
+# utilization = [60]
+
+# Setting for plottingS:
+faultRate = [10**-4]
+power = [4]
 utilization = [60]
 
 sumbound = 4
@@ -306,6 +319,36 @@ def experiments_art(n, por, fr, uti, inputfile):
     fo.write("\n")
     fo.close()
 
+def ploting_with_s(n, por, fr, uti, inputfile, delta, maxS):
+    # assume the inputs are generated
+    tasksets = np.load(inputfile+'.npy')
+    results = []
+    for s in np.arange(0, maxS, delta):
+        for tasks in tasksets:
+            results.append(EPST.probabilisticTest_s(n-1, tasks, 1, Chernoff_bounds, s))
+    title = 'Tasks: '+ repr(n) + ', $U^N_{SUM}$:'+repr(uti)+'%' + ', Fault Rate:'+repr(fr) + ', Delta:'+repr(delta)
+
+    plt.title(title, fontsize=20)
+    plt.grid(True)
+    plt.ylabel('Expected Miss Rate', fontsize=20)
+    plt.xlabel('Real number s', fontsize=22)
+    ax = plt.subplot()
+    ax.set_yscale("log")
+    # ax.set_ylim([10**-28,10**0])
+    #ax.tick_params(axis='both', which='major',labelsize=20)
+    # labels = ('$10^{-2}$','$10^{-4}$', '$10^{-6}$')
+    ax.plot(np.arange(0, maxS, delta), results, 'ro')
+    figure = plt.gcf()
+    # figure.set_size_inches([10,6.5])
+
+    # plt.legend(handles=[av, box, whisk], fontsize=16, frameon=True, loc=1)
+
+    plt.show()
+    #pp.savefig()
+    plt.clf()
+
+
+
 def main():
     args = sys.argv
     if len(args) < 5:
@@ -338,6 +381,9 @@ def main():
             elif mode == 4:
                 # used to present the example illustrating the differences between the miss rate and the probability of deadline misses.
                 experiments_art(n, por, fr, uti, filename)
+            elif mode == 5:
+                # used to print out a continuous curve of results with different real value s
+                ploting_with_s(n, por, fr, uti, filename, 0.5, 100)
             else:
                 raise NotImplementedError("Error: you use a mode without implementation")
 
