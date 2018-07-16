@@ -326,25 +326,20 @@ def ploting_with_s(n, por, fr, uti, inputfile, delta, maxS):
     for s in np.arange(0, maxS, delta):
         for tasks in tasksets:
             results.append(EPST.probabilisticTest_s(n-1, tasks, 1, Chernoff_bounds, s))
-    #pp = PdfPages("output-s.pdf")
-    title = 'Tasks: '+ repr(n) + ', $U^N_{SUM}$:'+repr(uti)+'%' + ', Fault Rate:'+repr(fr)
+    title = 'Tasks: '+ repr(n) + ', $U^N_{SUM}$:'+repr(uti)+'%' + ', Fault Rate:'+repr(fr) + ', Delta:'+repr(delta)
 
     plt.title(title, fontsize=20)
     plt.grid(True)
     plt.ylabel('Expected Miss Rate', fontsize=20)
     plt.xlabel('Real number s', fontsize=22)
     ax = plt.subplot()
-    #ax.set_yscale("log")
+    ax.set_yscale("log")
     # ax.set_ylim([10**-28,10**0])
-    ax.tick_params(axis='both', which='major',labelsize=20)
+    #ax.tick_params(axis='both', which='major',labelsize=20)
     # labels = ('$10^{-2}$','$10^{-4}$', '$10^{-6}$')
     ax.plot(np.arange(0, maxS, delta), results, 'ro')
     figure = plt.gcf()
     # figure.set_size_inches([10,6.5])
-
-    # box = mpatches.Patch(color='blue', label='First to Third Quartiles', linewidth=3)
-    # av = mpatches.Patch(color='red', label='Median', linewidth=3)
-    # whisk = mpatches.Patch(color='black', label='Whiskers', linewidth=3)
 
     # plt.legend(handles=[av, box, whisk], fontsize=16, frameon=True, loc=1)
 
@@ -388,7 +383,7 @@ def main():
                 experiments_art(n, por, fr, uti, filename)
             elif mode == 5:
                 # used to print out a continuous curve of results with different real value s
-                ploting_with_s(n, por, fr, uti, filename, 0.1, 20)
+                ploting_with_s(n, por, fr, uti, filename, 0.5, 100)
             else:
                 raise NotImplementedError("Error: you use a mode without implementation")
 

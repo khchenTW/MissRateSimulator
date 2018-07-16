@@ -1,6 +1,5 @@
 from __future__ import division
 import random
-import math
 import numpy as np
 import sys, getopt
 from scipy.optimize import *
@@ -15,18 +14,37 @@ def Chernoff_bounds(task, higherPriorityTasks, t, s):
     1. first calculate the total number of jobs among all tasks
     2. calculate mgf function for each task with their corresponding number jobs in nlist
     '''
-    prob = 1.0
-    # prob = np.float64(prob)
+    count = 0
+    prob = np.float128(1.0)
+    prob = prob/exp(s*t)
+    np.seterr(over='raise')
     #now sumN is the total number of jobs among all the tasks.
     c1, c2, x, p = symbols("c1, c2, x, p")
     expr = exp(c1*x)*(1-p)+exp(c2*x)*p
     mgf = lambdify((c1, c2, x, p), expr)
     #with time ceil(), what's the # of released jobs
     for i in higherPriorityTasks:
-        prob = prob * (mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**int(math.ceil(t/i['period']))
+        count+=1
+        # prob = prob * (mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**np.ceil(t/i['period'])
+        try:
+            #prob = prob * (mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**np.ceil(t/i['period'])
+            prob = prob * np.float128(mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**np.ceil(t/i['period'])
+        except Exception as inst:
+            print type(inst)
+            print inst.args
+            print inst
+            print prob
+            print (mgf(i['execution'], i['abnormal_exe'], s, i['prob']))
+            print np.ceil(t/i['period'])
+            #print (mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**np.ceil(t/i['period'])
+            #print (mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**4
+            print t
+            print i['period']
+            print i['prob']
+            print s
+            print count
     #itself
-    prob = prob * (mgf(task['execution'], task['abnormal_exe'], s, task['prob']))**int(math.ceil(t/task['period']))
-    prob = prob/exp(s*t)
+    prob = prob * np.float128(mgf(task['execution'], task['abnormal_exe'], s, task['prob']))**np.ceil(t/task['period'])
 
     return prob
 
@@ -47,10 +65,10 @@ def Hoeffding_inequality(task, higherPriorityTasks, t):
     vari = lambdify((c1, c2), (c2-c1)**2)
 
     for i in higherPriorityTasks:
-        expedSt = expedSt + sumr(i['execution'], i['abnormal_exe'], i['prob'])*int(math.ceil(t/i['period']))
-        sumvar = sumvar + vari(i['execution'], i['abnormal_exe'])*int(math.ceil(t/i['period']))
-    expedSt = expedSt + sumr(task['execution'], task['abnormal_exe'], task['prob'])*int(math.ceil(t/task['period']))
-    sumvar = sumvar + vari(task['execution'], task['abnormal_exe'])*int(math.ceil(t/task['period']))
+        expedSt = expedSt + sumr(i['execution'], i['abnormal_exe'], i['prob'])*int(np.ceil(t/i['period']))
+        sumvar = sumvar + vari(i['execution'], i['abnormal_exe'])*int(np.ceil(t/i['period']))
+    expedSt = expedSt + sumr(task['execution'], task['abnormal_exe'], task['prob'])*int(np.ceil(t/task['period']))
+    sumvar = sumvar + vari(task['execution'], task['abnormal_exe'])*int(np.ceil(t/task['period']))
 
     if t-expedSt > 0:
         prob = exp(-2*(t-expedSt)**2/sumvar)
@@ -78,14 +96,14 @@ def Bernstein_inequality(task, higherPriorityTasks, t):
     tmpC = 0.0
     for i in higherPriorityTasks:
         expedC = sumr(i['execution'], i['abnormal_exe'], i['prob'])
-        varC = varC + (powerC(i['execution'], i['abnormal_exe'], i['prob'])-(expedC)**2)*int(math.ceil(t/i['period']))
-        expedSt = expedSt + expedC*int(math.ceil(t/i['period']))
+        varC = varC + (powerC(i['execution'], i['abnormal_exe'], i['prob'])-(expedC)**2)*int(np.ceil(t/i['period']))
+        expedSt = expedSt + expedC*int(np.ceil(t/i['period']))
         tmpK = max(i['execution']-expedC, i['abnormal_exe']-expedC)
         if tmpK > K:
             K = tmpK
     expedC = sumr(task['execution'], task['abnormal_exe'], task['prob'])
-    varC = varC + (powerC(task['execution'], task['abnormal_exe'], task['prob'])-(expedC)**2)*int(math.ceil(t/task['period']))
-    expedSt = expedSt + expedC*int(math.ceil(t/task['period']))
+    varC = varC + (powerC(task['execution'], task['abnormal_exe'], task['prob'])-(expedC)**2)*int(np.ceil(t/task['period']))
+    expedSt = expedSt + expedC*int(np.ceil(t/task['period']))
     tmpK = max(task['execution']-expedC, task['abnormal_exe']-expedC)
     if tmpK > K:
         K = tmpK
