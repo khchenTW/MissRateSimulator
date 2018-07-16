@@ -16,6 +16,7 @@ def Chernoff_bounds(task, higherPriorityTasks, t, s):
     2. calculate mgf function for each task with their corresponding number jobs in nlist
     '''
     prob = 1.0
+    # prob = np.float64(prob)
     #now sumN is the total number of jobs among all the tasks.
     c1, c2, x, p = symbols("c1, c2, x, p")
     expr = exp(c1*x)*(1-p)+exp(c2*x)*p
