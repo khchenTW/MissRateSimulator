@@ -6,6 +6,8 @@ import sys, getopt
 from scipy.optimize import *
 from sympy import *
 from bounds import *
+maxS = 10
+delta = 0.1
 
 def determineWorkload(task, higherPriorityTasks, criteria, time):
     # This function is used to accumulate the workload from each task.
@@ -16,16 +18,30 @@ def determineWorkload(task, higherPriorityTasks, criteria, time):
         #print("jobs " + repr(jobs) + " wl task " + repr(jobs * i[criteria]) + " total workload " + repr(workload))
     return workload
 
+def findpoints(task, higherPriorityTasks, mode = 0):
+    points = []
+    if mode == 0: #kpoints
+        # pick up k testing points here
+        for i in higherPriorityTasks:
+            point = math.floor(task['period']/i['period'])*i['period']
+            if point != 0.0:
+                points.append(point)
+        points.append(task['period'])
+    else: #allpoints
+        for i in higherPriorityTasks:
+            for r in range(1, int(math.floor(task['period']/i['period']))+1):
+                point = r*i['period']
+            if point != 0.0:
+                points.append(point)
+        points.append(task['period'])
+    return points
+
 def ktda_s(task, higherPriorityTasks, criteria, ieq, s):
     # This function is used to report a upper bound of the probability for one deadline miss
 
     kpoints = []
     # pick up k testing points here
-    for i in higherPriorityTasks:
-        point = math.floor(task['period']/i['period'])*i['period']
-        if point != 0.0:
-            kpoints.append(point)
-    kpoints.append(task['period'])
+    kpoints = findpoints(task, higherPriorityTasks, 0)
 
     # for loop checking k points time
     minP = np.float64(1.0)
@@ -53,14 +69,10 @@ def ktda_p(task, higherPriorityTasks, criteria, ieq, bound):
 
     kpoints = []
     # pick up k testing points here
-    for i in higherPriorityTasks:
-        point = math.floor(task['period']/i['period'])*i['period']
-        if point != 0.0:
-            kpoints.append(point)
-    kpoints.append(task['period'])
+    kpoints = findpoints(task, higherPriorityTasks, 0)
 
     # for loop checking k points time
-    minP = 1.
+    minP = np.float64(1.0)
     for t in kpoints:
         workload = determineWorkload(task, higherPriorityTasks, criteria, t)
         if workload <= t:
@@ -69,10 +81,12 @@ def ktda_p(task, higherPriorityTasks, criteria, ieq, bound):
         fy = float(t)
         if ieq == Chernoff_bounds:
             try:
-                #res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='brent', bounds=[0,bound])
-                #res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='golden', bounds=[0,bound])
-                res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='bounded', bounds=[0,bound])
-                probRes = ieq(task, higherPriorityTasks, fy, res.x)
+                # res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='bounded', bounds=[0,bound])
+                # probRes = ieq(task, higherPriorityTasks, fy, res.x)
+                tmplist = []
+                for x in np.arange(0, maxS, delta):
+                    tmplist.append(ieq(task, higherPriorityTasks, fy, x))
+                probRes = min(tmplist)
             except TypeError:
                 print "TypeError"
                 probRes = 1
@@ -99,12 +113,7 @@ def ktda_k(task, higherPriorityTasks, criteria, window, ieq, bound):
                     kpoints.append(point)
         kpoints.append((window+1)*task['period'])
     else:
-        for i in higherPriorityTasks:
-            point = math.floor(task['period']/i['period'])*i['period']
-            if point != 0.0:
-                kpoints.append(point)
-        kpoints.append(task['period'])
-
+        kpoints = findpoints(task, higherPriorityTasks, 0)
 
     # for loop checking k points time
     minP = 1.
@@ -117,10 +126,15 @@ def ktda_k(task, higherPriorityTasks, criteria, window, ieq, bound):
 
         if ieq == Chernoff_bounds:
             try:
-                #find the x with minimum
-                res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='bounded', bounds=[0,bound])
-                #use x to find the minimal
-                probRes = ieq(task, higherPriorityTasks, fy, res.x)
+                ##find the x with minimum
+                #res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='bounded', bounds=[0,bound])
+                ##use x to find the minimal
+                #probRes = ieq(task, higherPriorityTasks, fy, res.x)
+                tmplist = []
+                for x in np.arange(0, maxS, delta):
+                    tmplist.append(ieq(task, higherPriorityTasks, fy, x))
+                probRes = min(tmplist)
+
             except TypeError:
                 print "TypeError"
                 probRes = 1
