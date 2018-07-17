@@ -2,10 +2,12 @@ from __future__ import division
 import random
 import numpy as np
 import sys, getopt
-from scipy.optimize import *
-from sympy import *
+import sympy as sp
 
 # Assume the input tasks only have two modes: c1 and c2.
+
+def mgf(c1, c2, x, p):
+    return str(sp.exp(c1*x)*(1-p)+sp.exp(c2*x)*p)
 
 def Chernoff_bounds(task, higherPriorityTasks, t, s):
     #t is the tested time t, s is a real number, n is the total number of involved tasks
@@ -15,38 +17,45 @@ def Chernoff_bounds(task, higherPriorityTasks, t, s):
     2. calculate mgf function for each task with their corresponding number jobs in nlist
     '''
     count = 0
-    prob = np.float128(1.0)
-    prob = prob/exp(s*t)
-    np.seterr(over='raise')
-    #now sumN is the total number of jobs among all the tasks.
-    c1, c2, x, p = symbols("c1, c2, x, p")
-    expr = exp(c1*x)*(1-p)+exp(c2*x)*p
-    mgf = lambdify((c1, c2, x, p), expr)
+    prob = 1.0
+    probstr = str(prob/sp.exp(s*t))
+    b_probstr = str(probstr)
+    #np.seterr(all='raise')
+    # c1, c2, x, p = sp.symbols("c1, c2, x, p")
+    # expr = sp.exp(c1*x)*(1-p)+sp.exp(c2*x)*p
+    # mgf = sp.lambdify((c1, c2, x, p), expr)
     #with time ceil(), what's the # of released jobs
     for i in higherPriorityTasks:
         count+=1
         # prob = prob * (mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**np.ceil(t/i['period'])
         try:
-            #prob = prob * (mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**np.ceil(t/i['period'])
-            prob = prob * np.float128(mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**np.ceil(t/i['period'])
+            b_probstr = str(probstr)
+            probstr = str(np.float128(probstr)*np.float128(mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**int(np.ceil(t/i['period'])))
+            # if s > 72 and count == 7:
+            #     raise Exception
         except Exception as inst:
             print type(inst)
-            print inst.args
-            print inst
-            print prob
-            print (mgf(i['execution'], i['abnormal_exe'], s, i['prob']))
+            # print inst
+            print "b_prob:"+b_probstr
+            print "prob:"+probstr
+            print np.float128(str(mgf(i['execution'], i['abnormal_exe'], s, i['prob'])))
+            print mgf(i['execution'], i['abnormal_exe'], s, i['prob'])
             print np.ceil(t/i['period'])
-            #print (mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**np.ceil(t/i['period'])
-            #print (mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**4
-            print t
-            print i['period']
-            print i['prob']
-            print s
-            print count
-    #itself
-    prob = prob * np.float128(mgf(task['execution'], task['abnormal_exe'], s, task['prob']))**np.ceil(t/task['period'])
+            print np.float128(mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**int(np.ceil(t/i['period']))
+            print np.float128(b_probstr)*np.float128(mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**int(np.ceil(t/i['period']))
+            # print np.float128(mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**np.ceil(t/i['period'])
+            # print np.float128(probstr)*np.float128(mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**np.ceil(t/i['period'])
+            # print probstr
+            # print "taskidx:"+str(count)
 
-    return prob
+    #itself
+    probstr = str(np.float128(probstr) * np.float128(mgf(task['execution'], task['abnormal_exe'], s, task['prob']))**int(np.ceil(t/task['period'])))
+    # if s > 72:
+    #     print "s:"
+    #     print probstr
+    #     print
+
+    return np.float128(probstr)
 
 def Hoeffding_inequality(task, higherPriorityTasks, t):
     #t is the tested time t, and n is the total number of involved tasks

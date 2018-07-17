@@ -44,7 +44,7 @@ def ktda_s(task, higherPriorityTasks, criteria, ieq, s):
     kpoints = findpoints(task, higherPriorityTasks, 0)
 
     # for loop checking k points time
-    minP = np.float64(1.0)
+    minP = np.float128(1.0)
     for t in kpoints:
         workload = determineWorkload(task, higherPriorityTasks, criteria, t)
         if workload <= t:
@@ -72,7 +72,7 @@ def ktda_p(task, higherPriorityTasks, criteria, ieq, bound):
     kpoints = findpoints(task, higherPriorityTasks, 0)
 
     # for loop checking k points time
-    minP = np.float64(1.0)
+    minP = np.float128(1.0)
     for t in kpoints:
         workload = determineWorkload(task, higherPriorityTasks, criteria, t)
         if workload <= t:
@@ -116,7 +116,7 @@ def ktda_k(task, higherPriorityTasks, criteria, window, ieq, bound):
         kpoints = findpoints(task, higherPriorityTasks, 0)
 
     # for loop checking k points time
-    minP = 1.
+    minP = np.float128(1.0)
     for t in kpoints:
         workload = determineWorkload(task, higherPriorityTasks, criteria, t)
         if workload <= t:
