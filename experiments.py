@@ -319,33 +319,40 @@ def experiments_art(n, por, fr, uti, inputfile):
     fo.write("\n")
     fo.close()
 
-def ploting_with_s(n, por, fr, uti, inputfile, delta, maxS):
+def ploting_with_s(n, por, fr, uti, inputfile, delta, minS, maxS):
+    filePrefix = 'plots-'
+    folder = 'figures/'
+
     # assume the inputs are generated
     tasksets = np.load(inputfile+'.npy')
-    results = []
-    for s in np.arange(0, maxS, delta):
-        for tasks in tasksets:
-            results.append(EPST.probabilisticTest_s(n-1, tasks, 1, Chernoff_bounds, s))
-    title = 'Tasks: '+ repr(n) + ', $U^N_{SUM}$:'+repr(uti)+'%' + ', Fault Rate:'+repr(fr) + ', Delta:'+repr(delta)
+    for idx, tasks in enumerate(tasksets):
+        # if idx == 11:
+        pp = PdfPages(folder + filePrefix + repr(idx) +'.pdf')
+        results = []
+        for s in np.arange(minS, maxS, delta):
+            r = np.float128()
+            r = EPST.probabilisticTest_s(n-1, tasks, 1, Chernoff_bounds, s)
+            results.append(r)
+        title = 'Tasks: '+ repr(n) + ', $U^N_{SUM}$:'+repr(uti)+'%' + ', Fault Rate:'+repr(fr) + ', Delta:'+repr(delta)
 
-    plt.title(title, fontsize=20)
-    plt.grid(True)
-    plt.ylabel('Expected Miss Rate', fontsize=20)
-    plt.xlabel('Real number s', fontsize=22)
-    ax = plt.subplot()
-    ax.set_yscale("log")
-    # ax.set_ylim([10**-28,10**0])
-    #ax.tick_params(axis='both', which='major',labelsize=20)
-    # labels = ('$10^{-2}$','$10^{-4}$', '$10^{-6}$')
-    ax.plot(np.arange(0, maxS, delta), results, 'ro')
-    figure = plt.gcf()
-    # figure.set_size_inches([10,6.5])
+        plt.title(title, fontsize=20)
+        plt.grid(True)
+        plt.ylabel('Expected Miss Rate', fontsize=20)
+        plt.xlabel('Real number s', fontsize=22)
+        plt.yscale("log")
+        # ax.set_ylim([10**-28,10**0])
+        #ax.tick_params(axis='both', which='major',labelsize=20)
+        # labels = ('$10^{-2}$','$10^{-4}$', '$10^{-6}$')
+        plt.plot(np.arange(minS, maxS, delta), results, 'ro')
+        figure = plt.gcf()
+        figure.set_size_inches([10,6.5])
 
-    # plt.legend(handles=[av, box, whisk], fontsize=16, frameon=True, loc=1)
+        # plt.legend(handles=[av, box, whisk], fontsize=16, frameon=True, loc=1)
 
-    plt.show()
-    #pp.savefig()
-    plt.clf()
+        #plt.show()
+        pp.savefig()
+        plt.clf()
+        pp.close()
 
 
 
@@ -383,7 +390,7 @@ def main():
                 experiments_art(n, por, fr, uti, filename)
             elif mode == 5:
                 # used to print out a continuous curve of results with different real value s
-                ploting_with_s(n, por, fr, uti, filename, 0.5, 100)
+                ploting_with_s(n, por, fr, uti, filename, 1, 0, 100)
             else:
                 raise NotImplementedError("Error: you use a mode without implementation")
 
