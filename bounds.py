@@ -10,7 +10,7 @@ import sympy as sp
 def mgf(c1, c2, x, p):
     return str(sp.exp(c1*x)*(1-p)+sp.exp(c2*x)*p)
 
-def SympyChernoff(task, higherPriorityTasks, t):
+def SympyChernoff(task, higherPriorityTasks, t, s):
     #potential numerical errors when s is larger than 1
     prob = 1.0
     #np.seterr(all='raise')
@@ -19,31 +19,44 @@ def SympyChernoff(task, higherPriorityTasks, t):
 
     #version 2
     expr = 1.0
+    expr = expr / sp.exp(x*t)
     for i in higherPriorityTasks:
         expr = sp.Mul(expr, sp.Pow(sp.Mul(sp.exp(sp.Mul(i['execution'],x)),(1-i['prob']))+ sp.Mul(sp.exp(sp.Mul(i['abnormal_exe'],x)),i['prob']), sp.ceiling(t/i['period'])))
     expr = sp.Mul(expr, sp.Pow(sp.Mul(sp.exp(sp.Mul(task['execution'],x)),(1-task['prob']))+ sp.Mul(sp.exp(sp.Mul(task['abnormal_exe'],x)),task['prob']), sp.ceiling(t/task['period'])))
-    expr = expr / sp.exp(x*t)
 
-
-    eps = 1e-50
-    x0 = np.float128(0)
     mgf = sp.lambdify(x, expr)
-    dmgf = sp.lambdify(x, expr.diff(x))
+    prob = mgf(np.float128(s))
+    #eps = 1e-5
+    #x0 = np.float128(0.1)
+    #x0 = 0.05
+    #div = expr/expr.diff(x)
+    #dmgf = sp.lambdify(x, expr.diff(x))
+    #X = newton(mgf, x0, fprime=dmgf, maxiter=100, tol=eps)
+    #print X
+    #print prob
+    '''
     counter = 0
     X = x0
     print "init", mgf(X)
-    while sp.Abs(mgf(np.float128(X))) > eps:
-        try:
-            X = X - np.float128(mgf(X))/np.float128(dmgf(X))
-        except ZeroDivisionError:
-            print "Error! - derivative zero for x = ", X
-        counter += 1
-        #print X
-        print mgf(X)
-    #print "stop"
-    print "counter", counter
-    prob = mgf(X)
 
+    for i in range(1, 100):
+        print X
+        nextGuess = X - div.subs(x, X)
+        X = nextGuess
+    #if mgf(X) >= 1:
+    #    return np.float128(1.0)
+    #while sp.Abs(mgf(np.float128(X))) > eps and counter < 200:
+    #    try:
+    #        X = X - np.float128(mgf(X)/dmgf(X))
+    #    except ZeroDivisionError:
+    #        print "Error! - derivative zero for x = ", X
+    #    counter += 1
+    #    print X
+    #    #print mgf(X)
+    ##print "stop"
+    #print "counter", counter
+    #prob = mgf(X)
+    '''
     '''
     #version 1
     expr = 1.0

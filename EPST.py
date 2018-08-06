@@ -54,7 +54,7 @@ def ktda_s(task, higherPriorityTasks, criteria, ieq, s):
         if ieq == Chernoff_bounds:
             probRes = ieq(task, higherPriorityTasks, fy, s)
         elif ieq == SympyChernoff:
-            probRes = ieq(task, higherPriorityTasks, fy)
+            probRes = ieq(task, higherPriorityTasks, fy, s)
         elif ieq == Hoeffding_inequality:
             probRes = ieq(task, higherPriorityTasks, fy)
         elif ieq == Bernstein_inequality:

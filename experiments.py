@@ -335,11 +335,13 @@ def ploting_with_s(n, por, fr, uti, inputfile, delta, minS, maxS):
         # sympy Lambdify
         results = []
         hpTasks = tasks[:n-1]
-        r1 = EPST.probabilisticTest_s(n-1, tasks, 1, SympyChernoff, -1)
-        print "ScipyNewton:", r1
+        #print "ScipyNewton:", r1
         for s in np.arange(5, 15, 0.01):
+            r1 = EPST.probabilisticTest_s(n-1, tasks, 1, SympyChernoff, s)
+            print "ScipyNewton:", r1
             r2 = np.float128()
             r2 = EPST.probabilisticTest_s(n-1, tasks, 1, Chernoff_bounds, s)
+            print "EPST:", r2
             if r2 < r1:
                 print "EPST is less than r1 when s: ", s
             results.append(r2)
