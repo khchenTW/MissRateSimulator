@@ -3,6 +3,7 @@ from bounds import *
 from simulator import MissRateSimulator
 import sys
 import numpy as np
+import sympy as sp
 import time
 import deadline_miss_probability #this is from ECRTS'18
 import decimal
@@ -13,7 +14,7 @@ import mixed_task_builder
 
 # for experiment 5
 import matplotlib
-# matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
@@ -319,16 +320,34 @@ def experiments_art(n, por, fr, uti, inputfile):
     fo.write("\n")
     fo.close()
 
+
 def ploting_with_s(n, por, fr, uti, inputfile, delta, minS, maxS):
     filePrefix = 'plots-'
-    folder = 'figures/'
+    #folder = 'figures/'
+    folder = '/home/khchen/Dropbox/' #for working from home
 
     # assume the inputs are generated
     tasksets = np.load(inputfile+'.npy')
     for idx, tasks in enumerate(tasksets):
         # if idx == 11:
         pp = PdfPages(folder + filePrefix + repr(idx) +'.pdf')
+
+        # sympy Lambdify
         results = []
+        hpTasks = tasks[:n-1]
+        r1 = EPST.probabilisticTest_s(n-1, tasks, 1, SympyChernoff, -1)
+        print "ScipyNewton:", r1
+        for s in np.arange(5, 15, 0.01):
+            r2 = np.float128()
+            r2 = EPST.probabilisticTest_s(n-1, tasks, 1, Chernoff_bounds, s)
+            if r2 < r1:
+                print "EPST is less than r1 when s: ", s
+            results.append(r2)
+            #print "EPST:"+str(r)
+        print "EPST:", min(results)
+        '''
+        #iteration testing
+
         for s in np.arange(minS, maxS, delta):
             r = np.float128()
             r = EPST.probabilisticTest_s(n-1, tasks, 1, Chernoff_bounds, s)
@@ -353,6 +372,7 @@ def ploting_with_s(n, por, fr, uti, inputfile, delta, minS, maxS):
         pp.savefig()
         plt.clf()
         pp.close()
+        '''
 
 
 
@@ -390,7 +410,7 @@ def main():
                 experiments_art(n, por, fr, uti, filename)
             elif mode == 5:
                 # used to print out a continuous curve of results with different real value s
-                ploting_with_s(n, por, fr, uti, filename, 1, 0, 100)
+                ploting_with_s(n, por, fr, uti, filename, 0.5, 0, 100)
             else:
                 raise NotImplementedError("Error: you use a mode without implementation")
 

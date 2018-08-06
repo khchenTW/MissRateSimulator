@@ -1,4 +1,5 @@
 from __future__ import division
+from scipy.optimize import newton
 import random
 import numpy as np
 import sys, getopt
@@ -8,6 +9,68 @@ import sympy as sp
 
 def mgf(c1, c2, x, p):
     return str(sp.exp(c1*x)*(1-p)+sp.exp(c2*x)*p)
+
+def SympyChernoff(task, higherPriorityTasks, t):
+    #potential numerical errors when s is larger than 1
+    prob = 1.0
+    #np.seterr(all='raise')
+
+    x = sp.symbols("x")
+
+    #version 2
+    expr = 1.0
+    for i in higherPriorityTasks:
+        expr = sp.Mul(expr, sp.Pow(sp.Mul(sp.exp(sp.Mul(i['execution'],x)),(1-i['prob']))+ sp.Mul(sp.exp(sp.Mul(i['abnormal_exe'],x)),i['prob']), sp.ceiling(t/i['period'])))
+    expr = sp.Mul(expr, sp.Pow(sp.Mul(sp.exp(sp.Mul(task['execution'],x)),(1-task['prob']))+ sp.Mul(sp.exp(sp.Mul(task['abnormal_exe'],x)),task['prob']), sp.ceiling(t/task['period'])))
+    expr = expr / sp.exp(x*t)
+
+
+    eps = 1e-50
+    x0 = np.float128(0)
+    mgf = sp.lambdify(x, expr)
+    dmgf = sp.lambdify(x, expr.diff(x))
+    counter = 0
+    X = x0
+    print "init", mgf(X)
+    while sp.Abs(mgf(np.float128(X))) > eps:
+        try:
+            X = X - np.float128(mgf(X))/np.float128(dmgf(X))
+        except ZeroDivisionError:
+            print "Error! - derivative zero for x = ", X
+        counter += 1
+        #print X
+        print mgf(X)
+    #print "stop"
+    print "counter", counter
+    prob = mgf(X)
+
+    '''
+    #version 1
+    expr = 1.0
+    for i in higherPriorityTasks:
+        expr = sp.Mul(expr, sp.Pow(sp.exp(i['execution']*x)*(1-i['prob'])+ sp.exp(i['abnormal_exe']*x)*i['prob'], sp.ceiling(t/i['period'])))
+    expr = sp.Mul(expr, sp.Pow(sp.exp(task['execution']*x)*(1-task['prob'])+ sp.exp(task['abnormal_exe']*x)*task['prob'], sp.ceiling(t/task['period'])))
+    expr = expr / sp.exp(x*t)
+    mgf = sp.lambdify(x, expr)
+    #mgfprime = expr.diff(x)
+    #print mgfprime
+    prob = mgf(np.float128(s))
+    '''
+
+    '''
+    #version 0
+    c1, c2, x, p, T = sp.symbols("c1, c2, x, p, T")
+    expr = sp.exp(c1*x)*(1-p)+sp.exp(c2*x)*p
+    expr = sp.Pow(expr, sp.ceiling(t/T))
+    mgf = sp.lambdify((c1, c2, x, p, T), expr)
+
+    for i in higherPriorityTasks:
+        prob = prob * mgf(i['execution'], i['abnormal_exe'], s, i['prob'], i['period'])
+    prob = prob * mgf(task['execution'], task['abnormal_exe'], s, task['prob'], task['period'])
+    prob = prob/sp.exp(s*t)
+    '''
+    return prob
+
 
 def Chernoff_bounds(task, higherPriorityTasks, t, s):
     #t is the tested time t, s is a real number, n is the total number of involved tasks
