@@ -36,6 +36,35 @@ def findpoints(task, higherPriorityTasks, mode = 0):
         points.append(task['period'])
     return points
 
+def ktda_list(task, higherPriorityTasks, criteria, ieq, s):
+    # This function is used to report a upper bound of the probability for one deadline miss
+
+    kpoints = []
+    # pick up k testing points here
+    kpoints = findpoints(task, higherPriorityTasks, 0)
+
+    # for loop checking k points time
+    minP = np.float128(1.0)
+    minList = []
+    probResList = []
+    for t in kpoints:
+        workload = determineWorkload(task, higherPriorityTasks, criteria, t)
+        if workload <= t:
+            return 0
+        #as WCET does not pass, check if the probability is acceptable
+        fy = float(t)
+        if ieq == SympyChernoff:
+            # probRes = ieq(task, higherPriorityTasks, fy, s)
+            probResList = ieq(task, higherPriorityTasks, fy, s)
+        else:
+            raise NotImplementedError("Error: You use a bound without implementation.")
+        if minP > probResList[0]: #find out the minimum in k points
+            minP = probResList[0]
+            minT = t
+            minList = probResList
+    return minList
+
+
 def ktda_s(task, higherPriorityTasks, criteria, ieq, s):
     # This function is used to report a upper bound of the probability for one deadline miss
 
@@ -195,6 +224,17 @@ def probabilisticTest_s(k, tasks, numDeadline, ieq, s):
     hpTasks = tasks[:k]
     if numDeadline == 1:
         resP = ktda_s(tasks[k], hpTasks, 'abnormal_exe', ieq, s)
+    else:
+        print("This should not be called!")
+        # resP = kltda(tasks[k], hpTasks, 'abnormal_exe',  numDeadline, ktda_p(tasks[k], hpTasks, 'abnormal_exe', ieq, bound), Chernoff_bounds, bound)
+    return resP
+
+def probabilisticTest_list(k, tasks, numDeadline, ieq, s):
+    # this function is used to return a list of breakpoint, t, and result.
+    hpTasks = tasks[:k]
+    resP = []
+    if numDeadline == 1:
+        resP = ktda_list(tasks[k], hpTasks, 'abnormal_exe', ieq, s)
     else:
         print("This should not be called!")
         # resP = kltda(tasks[k], hpTasks, 'abnormal_exe',  numDeadline, ktda_p(tasks[k], hpTasks, 'abnormal_exe', ieq, bound), Chernoff_bounds, bound)

@@ -334,16 +334,19 @@ def ploting_with_s(n, por, fr, uti, inputfile, delta, minS, maxS):
 
         # sympy Lambdify
         results = []
+        sci_res = []
         hpTasks = tasks[:n-1]
         #print "ScipyNewton:", r1
-        for s in np.arange(5, 15, 0.01):
-            r1 = EPST.probabilisticTest_s(n-1, tasks, 1, SympyChernoff, s)
-            print "ScipyNewton:", r1
+        sci_res = EPST.probabilisticTest_list(n-1, tasks, 1, SympyChernoff, -1)
+        print sci_res
+        r1 = sci_res[0]
+        xr1 = sci_res[1]
+        print "ScipyNewton:", r1
+        for s in np.arange(minS, maxS, delta):
             r2 = np.float128()
             r2 = EPST.probabilisticTest_s(n-1, tasks, 1, Chernoff_bounds, s)
-            print "EPST:", r2
             if r2 < r1:
-                print "EPST is less than r1 when s: ", s
+                print "EPST is less than r1 when s: ", s, r2
             results.append(r2)
             #print "EPST:"+str(r)
         print "EPST:", min(results)
@@ -354,8 +357,9 @@ def ploting_with_s(n, por, fr, uti, inputfile, delta, minS, maxS):
             r = np.float128()
             r = EPST.probabilisticTest_s(n-1, tasks, 1, Chernoff_bounds, s)
             results.append(r)
-        title = 'Tasks: '+ repr(n) + ', $U^N_{SUM}$:'+repr(uti)+'%' + ', Fault Rate:'+repr(fr) + ', Delta:'+repr(delta)
 
+        '''
+        title = 'Tasks: '+ repr(n) + ', $U^N_{SUM}$:'+repr(uti)+'%' + ', Fault Rate:'+repr(fr) + ', Delta:'+repr(delta)
         plt.title(title, fontsize=20)
         plt.grid(True)
         plt.ylabel('Expected Miss Rate', fontsize=20)
@@ -365,6 +369,7 @@ def ploting_with_s(n, por, fr, uti, inputfile, delta, minS, maxS):
         #ax.tick_params(axis='both', which='major',labelsize=20)
         # labels = ('$10^{-2}$','$10^{-4}$', '$10^{-6}$')
         plt.plot(np.arange(minS, maxS, delta), results, 'ro')
+        plt.plot(xr1, r1, 'b+')
         figure = plt.gcf()
         figure.set_size_inches([10,6.5])
 
@@ -374,7 +379,6 @@ def ploting_with_s(n, por, fr, uti, inputfile, delta, minS, maxS):
         pp.savefig()
         plt.clf()
         pp.close()
-        '''
 
 
 

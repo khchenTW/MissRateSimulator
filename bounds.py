@@ -1,5 +1,5 @@
 from __future__ import division
-from scipy.optimize import newton
+from scipy.optimize import bisect
 import random
 import numpy as np
 import sys, getopt
@@ -12,10 +12,25 @@ def mgf(c1, c2, x, p):
 
 def SympyChernoff(task, higherPriorityTasks, t, s):
     #potential numerical errors when s is larger than 1
-    prob = 1.0
-    #np.seterr(all='raise')
+    prob = np.float128(1.0)
+    np.seterr(all='raise')
 
     x = sp.symbols("x")
+
+    #version 3
+    #issue, underflow problem in the middle
+    #expr = 1.0
+    ##expr = expr / sp.exp(x*t)
+    #for i in higherPriorityTasks:
+    #    expr = sp.Mul(expr, sp.Pow(sp.Mul(sp.exp(sp.Mul(np.float128(i['execution']-t),x)),(1-i['prob']))+ sp.Mul(sp.exp(sp.Mul(np.float128(i['abnormal_exe']-t),x)),i['prob']), sp.ceiling(t/i['period'])))
+    #expr = sp.Mul(expr, sp.Pow(sp.Mul(sp.exp(sp.Mul(np.float128(task['execution']-t),x)),(1-task['prob']))+ sp.Mul(sp.exp(sp.Mul(np.float128(task['abnormal_exe']-t),x)),task['prob']), sp.ceiling(t/task['period'])))
+
+
+    #mgf1 = sp.lambdify(x, expr)
+    #dmgf2 = sp.lambdify(x, expr.diff(x))
+
+    # print expr
+    #print mgf1(np.float128(10))
 
     #version 2
     expr = 1.0
@@ -25,14 +40,59 @@ def SympyChernoff(task, higherPriorityTasks, t, s):
     expr = sp.Mul(expr, sp.Pow(sp.Mul(sp.exp(sp.Mul(task['execution'],x)),(1-task['prob']))+ sp.Mul(sp.exp(sp.Mul(task['abnormal_exe'],x)),task['prob']), sp.ceiling(t/task['period'])))
 
     mgf = sp.lambdify(x, expr)
-    prob = mgf(np.float128(s))
+    dmgf = sp.lambdify(x, expr.diff(x))
+
+    # print
+    # print expr
+    #print mgf(np.float128(10))
+    # print
+
+    #Junjie method -  basically bisection?
+    # x0 is init guess
+    x0 = np.float128(0.1) # dmgf(x0) < 0
+    delta = 50
+    x1 = np.float128(delta)
+    m = np.float128(0)
+    eps = np.float128("1e-50")
+    while dmgf(x1) < 0:
+        # find the upper bound of s
+        x1 = x0 + delta
+    counter = 0
+    while np.float128((x1 - x0)/2) > eps and counter < 50:
+        counter += 1
+        m = np.float128((x0+x1)/2)
+        if dmgf(m) == 0:
+            breakpoint = m
+            break
+        if dmgf(m) > 0:
+            x1 = m
+        else:
+            x0 = m
+        '''
+        print "x0:", x0
+        print "x1:", x1
+        print "x1-x0 div 2:", (x1 - x0)/2
+        print "dx0:", dmgf(np.float128(x0))
+        print "dx1:", dmgf(np.float128(x1))
+        print "m:", m
+        '''
+
+    #breakpoint = bisect(dmgf, np.float128(x0), np.float128(x1))
+    print m
+    prob = mgf(np.float128(m))
+
+    #print dmgf(np.float128(0.1))
+    #print dmgf(np.float128(10))
+    #prob = mgf(np.float128(s))
+
+    #newton method
     #eps = 1e-5
     #x0 = np.float128(0.1)
     #x0 = 0.05
     #div = expr/expr.diff(x)
-    #dmgf = sp.lambdify(x, expr.diff(x))
     #X = newton(mgf, x0, fprime=dmgf, maxiter=100, tol=eps)
     #print X
+    #prob = mgf(np.float128(X))
     #print prob
     '''
     counter = 0
@@ -82,7 +142,7 @@ def SympyChernoff(task, higherPriorityTasks, t, s):
     prob = prob * mgf(task['execution'], task['abnormal_exe'], s, task['prob'], task['period'])
     prob = prob/sp.exp(s*t)
     '''
-    return prob
+    return [prob, m]
 
 
 def Chernoff_bounds(task, higherPriorityTasks, t, s):
