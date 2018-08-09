@@ -81,12 +81,8 @@ def ktda_p(task, higherPriorityTasks, criteria, ieq, bound):
         fy = float(t)
         if ieq == Chernoff_bounds:
             try:
-                # res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='bounded', bounds=[0,bound])
-                # probRes = ieq(task, higherPriorityTasks, fy, res.x)
-                tmplist = []
-                for x in np.arange(0, maxS, delta):
-                    tmplist.append(ieq(task, higherPriorityTasks, fy, x))
-                probRes = min(tmplist)
+                res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='bounded', bounds=[0,bound])
+                probRes = ieq(task, higherPriorityTasks, fy, res.x)
             except TypeError:
                 print "TypeError"
                 probRes = 1
@@ -127,14 +123,9 @@ def ktda_k(task, higherPriorityTasks, criteria, window, ieq, bound):
         if ieq == Chernoff_bounds:
             try:
                 ##find the x with minimum
-                #res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='bounded', bounds=[0,bound])
+                res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='bounded', bounds=[0,bound])
                 ##use x to find the minimal
-                #probRes = ieq(task, higherPriorityTasks, fy, res.x)
-                tmplist = []
-                for x in np.arange(0, maxS, delta):
-                    tmplist.append(ieq(task, higherPriorityTasks, fy, x))
-                probRes = min(tmplist)
-
+                probRes = ieq(task, higherPriorityTasks, fy, res.x)
             except TypeError:
                 print "TypeError"
                 probRes = 1
