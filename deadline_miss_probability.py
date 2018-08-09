@@ -79,7 +79,6 @@ The state pruning introduced in Section 6.1 is used
 'probabilities' tracks the calculated probabilities for each time point
 'states' tracks the number of states for each time point
 'pruned' tracks the number of states for each time point after pruning '''
-'''
 def calculate_prune(tasks, prob_abnormal, probabilties, states, pruned):
     tasks = sort(tasks, 'deadline', False)
     deadline = tasks[len(tasks)-1]['deadline']
@@ -99,8 +98,6 @@ def calculate_prune(tasks, prob_abnormal, probabilties, states, pruned):
         if (probabilties[i]<probability):
             probability = probabilties[i]
     return probability
-
-'''
 ''' Calculates the probability of deadline miss as detailed in Section 5.
 All job releases of higher priority tasks are considered.
 The state pruning introduced in Section 6.1 is used
@@ -114,7 +111,7 @@ reduction for all binomial representations.
 'states' tracks the number of states for each time point
 'pruned' tracks the number of states for each time point after pruning
 'max_error' tracks the maximum possible error that can occur after the reduction '''
-'''
+
 def calculate_prune_reduct(tasks, prob_abnormal, probabilties, states, pruned, max_error, max_error_allowed):
     tasks = sort(tasks, 'deadline', False)
     deadline = tasks[len(tasks)-1]['deadline']
@@ -137,7 +134,6 @@ def calculate_prune_reduct(tasks, prob_abnormal, probabilties, states, pruned, m
             probability = probabilties[i]
     return probability
 
-'''
 ''' Approximates the probability of deadline miss as detailed in Section 5
 by only considering the last release of all higher priority tasks.
 The state pruning introduced in Section 6.1 is used
@@ -147,7 +143,6 @@ The state pruning introduced in Section 6.1 is used
 'probabilities' tracks the calculated probabilities for each time point
 'states' tracks the number of states for each time point
 'pruned' tracks the number of states for each time point after pruning '''
-'''
 def approximate_prune(tasks, prob_abnormal, probabilties, states, pruned):
     tasks = sort(tasks, 'deadline', False)
     deadline = tasks[len(tasks)-1]['deadline']
@@ -162,7 +157,6 @@ def approximate_prune(tasks, prob_abnormal, probabilties, states, pruned):
         if (probabilties[i]<probability):
             probability = probabilties[i]
     return probability
-'''
 ''' The convolution based approach by Maxim and Cucu-Grosjean [17]'''
 '''
 def convolution(tasks, prob_abnormal, probabilties, states):

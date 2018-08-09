@@ -83,7 +83,7 @@ def lookup(k, tasks, numDeadline, mode):
             probs = []
             states = []
             pruned = []
-            conlookupTable[k][numDeadline] = deadline_miss_probability.calculate_pruneCON(tasks, 0.001, probs, states, pruned, numDeadline)
+            conlookupTable[k][numDeadline] = deadline_miss_probability.calculate_pruneCON(tasks, faultRate[0], probs, states, pruned, numDeadline)
         return conlookupTable[k][numDeadline]
 
 def Approximation(n, J, k, tasks, mode=0):
@@ -220,7 +220,7 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
                 states = []
                 pruned = []
                 t3 = time.clock()
-                c = deadline_miss_probability.calculate_pruneCON(tasks, 0.001, probs, states, pruned, x)
+                c = deadline_miss_probability.calculate_pruneCON(tasks, fr, probs, states, pruned, x)
                 t4 = time.clock()
                 diff = t4-t3
                 stampPHICON.append(diff)
@@ -332,33 +332,68 @@ def ploting_with_s(n, por, fr, uti, inputfile, delta, minS, maxS):
         # if idx == 11:
         pp = PdfPages(folder + filePrefix + repr(idx) +'.pdf')
 
-        # sympy Lambdify
-        results = []
-        sci_res = []
+        # bisection search
+        bi_res = []
         hpTasks = tasks[:n-1]
-        #print "ScipyNewton:", r1
-        sci_res = EPST.probabilisticTest_list(n-1, tasks, 1, SympyChernoff, -1)
-        print sci_res
-        r1 = sci_res[0]
-        xr1 = sci_res[1]
-        print "ScipyNewton:", r1
+        start_time = time.time()
+        bi_res = EPST.probabilisticTest_list(n-1, tasks, 1, SympyChernoff, -1)
+        measurebi = (time.time() - start_time)
+        print ("--- Bisection %s seconds ---" % measurebi)
+        print bi_res
+        r1 = bi_res[0]
+        xr1 = bi_res[1]
+        print "First derivative Bisection:", r1
+
+        # sequential search
+        start_time = time.time()
+        results = []
+        Seq_res = []
         for s in np.arange(minS, maxS, delta):
+            Seq_res = EPST.probabilisticTest_s(n-1, tasks, 1, Chernoff_bounds, s, 0)
             r2 = np.float128()
-            r2 = EPST.probabilisticTest_s(n-1, tasks, 1, Chernoff_bounds, s)
+            r2 = Seq_res[0]
             if r2 < r1:
-                print "EPST is less than r1 when s: ", s, r2
+                print "Seq is less than r1 when s: ", s, r2
             results.append(r2)
             #print "EPST:"+str(r)
-        print "EPST:", min(results)
-        '''
-        #iteration testing
+        measureSeq = (time.time() - start_time)
+        print ("--- Seq %s seconds ---" % measureSeq)
+        print "Seq:", min(results)
 
-        for s in np.arange(minS, maxS, delta):
-            r = np.float128()
-            r = EPST.probabilisticTest_s(n-1, tasks, 1, Chernoff_bounds, s)
-            results.append(r)
+        # original SIES implementation
+        start_time = time.time()
+        EPST_res = []
+        EPST_res = EPST.probabilisticTest_s(n-1, tasks, 1, Chernoff_bounds, 1, 1)
+        r3 = EPST_res[0]
+        xr3 = EPST_res[1]
+        measureEPST = (time.time() - start_time)
+        print ("--- EPST %s seconds ---" % measureEPST)
+        print "EPST:", r3
 
-        '''
+        # Georg's ECRTS prune method
+        start_time = time.time()
+        probs = []
+        states = []
+        pruned = []
+        prune_res = deadline_miss_probability.calculate_prune(tasks, fr, probs, states, pruned)
+
+        r4 = prune_res
+        measurePrune = (time.time() - start_time)
+        print ("--- ECRTS Prune %s seconds ---" % measurePrune)
+        print "Prune:", r4
+
+        # Georg's ECRTS approximate prune method
+        start_time = time.time()
+        probs = []
+        states = []
+        pruned = []
+        prune_res = deadline_miss_probability.approximate_prune(tasks, fr, probs, states, pruned)
+
+        r5 = prune_res
+        measureAproxPrune = (time.time() - start_time)
+        print ("--- ECRTS Approximate Prune %s seconds ---" % measurePrune)
+        print "Aprox Prune:", r5
+
         title = 'Tasks: '+ repr(n) + ', $U^N_{SUM}$:'+repr(uti)+'%' + ', Fault Rate:'+repr(fr) + ', Delta:'+repr(delta)
         plt.title(title, fontsize=20)
         plt.grid(True)
@@ -369,7 +404,10 @@ def ploting_with_s(n, por, fr, uti, inputfile, delta, minS, maxS):
         #ax.tick_params(axis='both', which='major',labelsize=20)
         # labels = ('$10^{-2}$','$10^{-4}$', '$10^{-6}$')
         plt.plot(np.arange(minS, maxS, delta), results, 'ro')
-        plt.plot(xr1, r1, 'b+')
+        plt.plot(xr1, r1, 'b*')
+        plt.plot(xr3, r3, 'g^')
+        plt.plot(np.arange(minS, maxS, delta), [r4 for x in np.arange(minS, maxS, delta)], 'mD')
+        plt.plot(np.arange(minS, maxS, delta), [r5 for x in np.arange(minS, maxS, delta)], 'cH')
         figure = plt.gcf()
         figure.set_size_inches([10,6.5])
 

@@ -65,7 +65,7 @@ def ktda_list(task, higherPriorityTasks, criteria, ieq, s):
     return minList
 
 
-def ktda_s(task, higherPriorityTasks, criteria, ieq, s):
+def ktda_s(task, higherPriorityTasks, ieq, s, mode=0):
     # This function is used to report a upper bound of the probability for one deadline miss
 
     kpoints = []
@@ -74,14 +74,25 @@ def ktda_s(task, higherPriorityTasks, criteria, ieq, s):
 
     # for loop checking k points time
     minP = np.float128(1.0)
+    selecteds = 0
+    minS = 0
     for t in kpoints:
-        workload = determineWorkload(task, higherPriorityTasks, criteria, t)
+        workload = determineWorkload(task, higherPriorityTasks, 'abnormal_exe', t)
         if workload <= t:
             return 0
         #as WCET does not pass, check if the probability is acceptable
         fy = float(t)
         if ieq == Chernoff_bounds:
-            probRes = ieq(task, higherPriorityTasks, fy, s)
+            if mode == 0:
+                probRes = ieq(task, higherPriorityTasks, fy, s)
+            else:
+                try:
+                    res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='bounded', bounds=[0,s])
+                    probRes = ieq(task, higherPriorityTasks, fy, res.x)
+                    selecteds = res.x
+                except TypeError:
+                    print "TypeError"
+                    probRes = 1
         elif ieq == SympyChernoff:
             probRes = ieq(task, higherPriorityTasks, fy, s)
         elif ieq == Hoeffding_inequality:
@@ -92,7 +103,8 @@ def ktda_s(task, higherPriorityTasks, criteria, ieq, s):
             raise NotImplementedError("Error: You use a bound without implementation.")
         if minP > probRes: #find out the minimum in k points
             minP = probRes
-    return minP
+            minS = selecteds
+    return [minP, minS]
 
 
 def ktda_p(task, higherPriorityTasks, criteria, ieq, bound):
@@ -112,12 +124,12 @@ def ktda_p(task, higherPriorityTasks, criteria, ieq, bound):
         fy = float(t)
         if ieq == Chernoff_bounds:
             try:
-                # res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='bounded', bounds=[0,bound])
-                # probRes = ieq(task, higherPriorityTasks, fy, res.x)
-                tmplist = []
-                for x in np.arange(0, maxS, delta):
-                    tmplist.append(ieq(task, higherPriorityTasks, fy, x))
-                probRes = min(tmplist)
+                res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='bounded', bounds=[0,bound])
+                probRes = ieq(task, higherPriorityTasks, fy, res.x)
+                # tmplist = []
+                # for x in np.arange(0, maxS, delta):
+                #     tmplist.append(ieq(task, higherPriorityTasks, fy, x))
+                # probRes = min(tmplist)
             except TypeError:
                 print "TypeError"
                 probRes = 1
@@ -219,11 +231,11 @@ def probabilisticTest_k(k, tasks, numDeadline, ieq, bound=1):
         resP = kltda(tasks[k], hpTasks, 'abnormal_exe',  numDeadline, ktda_p(tasks[k], hpTasks, 'abnormal_exe', ieq, bound), Chernoff_bounds, bound)
     return resP
 
-def probabilisticTest_s(k, tasks, numDeadline, ieq, s):
+def probabilisticTest_s(k, tasks, numDeadline, ieq, s, mode=0):
     # this function is used to only test for task k with different s
     hpTasks = tasks[:k]
     if numDeadline == 1:
-        resP = ktda_s(tasks[k], hpTasks, 'abnormal_exe', ieq, s)
+        resP = ktda_s(tasks[k], hpTasks, ieq, s, mode)
     else:
         print("This should not be called!")
         # resP = kltda(tasks[k], hpTasks, 'abnormal_exe',  numDeadline, ktda_p(tasks[k], hpTasks, 'abnormal_exe', ieq, bound), Chernoff_bounds, bound)

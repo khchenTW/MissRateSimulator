@@ -1,5 +1,5 @@
 from __future__ import division
-from scipy.optimize import bisect
+#from scipy.optimize import bisect
 import random
 import numpy as np
 import sys, getopt
@@ -22,14 +22,14 @@ def SympyChernoff(task, higherPriorityTasks, t, s):
     #expr = 1.0
     ##expr = expr / sp.exp(x*t)
     #for i in higherPriorityTasks:
-    #    expr = sp.Mul(expr, sp.Pow(sp.Mul(sp.exp(sp.Mul(np.float128(i['execution']-t),x)),(1-i['prob']))+ sp.Mul(sp.exp(sp.Mul(np.float128(i['abnormal_exe']-t),x)),i['prob']), sp.ceiling(t/i['period'])))
-    #expr = sp.Mul(expr, sp.Pow(sp.Mul(sp.exp(sp.Mul(np.float128(task['execution']-t),x)),(1-task['prob']))+ sp.Mul(sp.exp(sp.Mul(np.float128(task['abnormal_exe']-t),x)),task['prob']), sp.ceiling(t/task['period'])))
+    #    expr = sp.Mul(expr, sp.Pow(sp.Mul(sp.exp(sp.Mul(i['execution']-t*sp.ceiling(t/i['period']),x)),(1-i['prob']))+ sp.Mul(sp.exp(sp.Mul(i['abnormal_exe']-t*sp.ceiling(t/i['period']),x)),i['prob']), sp.ceiling(t/i['period'])))
+    #expr = sp.Mul(expr, sp.Pow(sp.Mul(sp.exp(sp.Mul(task['execution']-t*sp.ceiling(t/i['period']),x)),(1-task['prob']))+ sp.Mul(sp.exp(sp.Mul(task['abnormal_exe']-t*sp.ceiling(t/i['period']),x)),task['prob']), sp.ceiling(t/task['period'])))
 
 
     #mgf1 = sp.lambdify(x, expr)
     #dmgf2 = sp.lambdify(x, expr.diff(x))
 
-    # print expr
+    #print expr
     #print mgf1(np.float128(10))
 
     #version 2
@@ -42,9 +42,9 @@ def SympyChernoff(task, higherPriorityTasks, t, s):
     mgf = sp.lambdify(x, expr)
     dmgf = sp.lambdify(x, expr.diff(x))
 
-    # print
+    # print "---"
     # print expr
-    #print mgf(np.float128(10))
+    # print mgf(np.float128(10))
     # print
 
     #Junjie method -  basically bisection?
@@ -78,7 +78,7 @@ def SympyChernoff(task, higherPriorityTasks, t, s):
         '''
 
     #breakpoint = bisect(dmgf, np.float128(x0), np.float128(x1))
-    print m
+    # print m
     prob = mgf(np.float128(m))
 
     #print dmgf(np.float128(0.1))
