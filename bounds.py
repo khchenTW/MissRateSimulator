@@ -1,13 +1,154 @@
 from __future__ import division
+from scipy.optimize import bisect
+from scipy.optimize import newton
 import random
 import numpy as np
 import sys, getopt
 import sympy as sp
+import time
+
+flag = 0 # for measure only once
 
 # Assume the input tasks only have two modes: c1 and c2.
 
 def mgf(c1, c2, x, p):
     return str(sp.exp(c1*x)*(1-p)+sp.exp(c2*x)*p)
+
+def SympyChernoff(task, higherPriorityTasks, t, s):
+    global flag
+    prob = np.float128(1.0)
+    np.seterr(all='raise')
+    x = sp.symbols("x")
+
+    #version 3
+    #combine exp(-st) into each term of the divisor
+    #issue: underflow problem in sub-terms
+
+    #expr = 1.0
+    #for i in higherPriorityTasks:
+    #    expr = sp.Mul(expr, sp.Pow(sp.Mul(sp.exp(sp.Mul(i['execution']-t*sp.ceiling(t/i['period']),x)),(1-i['prob']))+ sp.Mul(sp.exp(sp.Mul(i['abnormal_exe']-t*sp.ceiling(t/i['period']),x)),i['prob']), sp.ceiling(t/i['period'])))
+    #expr = sp.Mul(expr, sp.Pow(sp.Mul(sp.exp(sp.Mul(task['execution']-t*sp.ceiling(t/i['period']),x)),(1-task['prob']))+ sp.Mul(sp.exp(sp.Mul(task['abnormal_exe']-t*sp.ceiling(t/i['period']),x)),task['prob']), sp.ceiling(t/task['period'])))
+    #mgf1 = sp.lambdify(x, expr)
+    #dmgf2 = sp.lambdify(x, expr.diff(x))
+    #print expr
+    #print mgf1(np.float128(10))
+
+    #version 2 - bisection for first derivative
+    expr = 1.0
+    expr = expr / sp.exp(x*t)
+    for i in higherPriorityTasks:
+        expr = sp.Mul(expr, sp.Pow(sp.Mul(sp.exp(sp.Mul(i['execution'],x)),(1-i['prob']))+ sp.Mul(sp.exp(sp.Mul(i['abnormal_exe'],x)),i['prob']), sp.ceiling(t/i['period'])))
+    expr = sp.Mul(expr, sp.Pow(sp.Mul(sp.exp(sp.Mul(task['execution'],x)),(1-task['prob']))+ sp.Mul(sp.exp(sp.Mul(task['abnormal_exe'],x)),task['prob']), sp.ceiling(t/task['period'])))
+
+    mgf = sp.lambdify(x, expr)
+    dmgf = sp.lambdify(x, expr.diff(x))
+
+    # print "---"
+    # print expr
+    # print mgf(np.float128(10))
+    # print
+
+    # x0 is init guess
+    x0 = np.float128(0.1) # dmgf(x0) < 0
+    delta = 10
+    x1 = np.float128(delta)
+    m = np.float128(0)
+    eps = np.float128("1e-50")
+    while dmgf(x1) < 0:
+        # find the upper bound of s
+        x1 = x0 + delta
+    counter = 0
+    while np.float128((x1 - x0)/2) > eps and counter < 50:
+        counter += 1
+        m = np.float128((x0+x1)/2)
+        if dmgf(m) == 0:
+            breakpoint = m
+            break
+        if dmgf(m) > 0:
+            x1 = m
+        else:
+            x0 = m
+        '''
+        print "x0:", x0
+        print "x1:", x1
+        print "x1-x0 div 2:", (x1 - x0)/2
+        print "dx0:", dmgf(np.float128(x0))
+        print "dx1:", dmgf(np.float128(x1))
+        print "m:", m
+        '''
+    # We can also call bisection from the scipy.optimizer:
+    # m= bisect(dmgf, np.float128(x0), np.float128(x1))
+
+    start_time = time.time()
+    prob = mgf(np.float128(m))
+    if flag == 0:
+        print ("--- for one t %s seconds ---" % (time.time() - start_time))
+        flag = 1
+
+    # newton method from scipy.optimier
+    '''
+    eps = 1e-5
+    x0 = np.float128(0.1)
+    x0 = 0.05
+    div = expr/expr.diff(x)
+    X = newton(mgf, x0, fprime=dmgf, maxiter=100, tol=eps)
+    print X
+    prob = mgf(np.float128(X))
+    print prob
+    '''
+
+    # newton method manual implementation
+    '''
+    counter = 0
+    X = x0
+    print "init", mgf(X)
+
+    for i in range(1, 100):
+        print X
+        nextGuess = X - div.subs(x, X)
+        X = nextGuess
+    if mgf(X) >= 1:
+        return np.float128(1.0)
+    while sp.Abs(mgf(np.float128(X))) > eps and counter < 200:
+        try:
+            X = X - np.float128(mgf(X)/dmgf(X))
+        except ZeroDivisionError:
+            print "Error! - derivative zero for x = ", X
+        counter += 1
+        print X
+        #print mgf(X)
+    print "stop"
+    print "counter", counter
+    prob = mgf(X)
+    '''
+
+    '''
+    #version 1
+    expr = 1.0
+    for i in higherPriorityTasks:
+        expr = sp.Mul(expr, sp.Pow(sp.exp(i['execution']*x)*(1-i['prob'])+ sp.exp(i['abnormal_exe']*x)*i['prob'], sp.ceiling(t/i['period'])))
+    expr = sp.Mul(expr, sp.Pow(sp.exp(task['execution']*x)*(1-task['prob'])+ sp.exp(task['abnormal_exe']*x)*task['prob'], sp.ceiling(t/task['period'])))
+    expr = expr / sp.exp(x*t)
+    mgf = sp.lambdify(x, expr)
+    #mgfprime = expr.diff(x)
+    #print mgfprime
+    prob = mgf(np.float128(s))
+    '''
+
+    '''
+    #version 0
+    c1, c2, x, p, T = sp.symbols("c1, c2, x, p, T")
+    expr = sp.exp(c1*x)*(1-p)+sp.exp(c2*x)*p
+    expr = sp.Pow(expr, sp.ceiling(t/T))
+    mgf = sp.lambdify((c1, c2, x, p, T), expr)
+
+    for i in higherPriorityTasks:
+        prob = prob * mgf(i['execution'], i['abnormal_exe'], s, i['prob'], i['period'])
+    prob = prob * mgf(task['execution'], task['abnormal_exe'], s, task['prob'], task['period'])
+    prob = prob/sp.exp(s*t)
+    '''
+    return [prob, m]
+
 
 def Chernoff_bounds(task, higherPriorityTasks, t, s):
     #t is the tested time t, s is a real number, n is the total number of involved tasks
@@ -20,7 +161,7 @@ def Chernoff_bounds(task, higherPriorityTasks, t, s):
     prob = 1.0
     probstr = str(prob/sp.exp(s*t))
     b_probstr = str(probstr)
-    #np.seterr(all='raise')
+    np.seterr(all='raise')
     # c1, c2, x, p = sp.symbols("c1, c2, x, p")
     # expr = sp.exp(c1*x)*(1-p)+sp.exp(c2*x)*p
     # mgf = sp.lambdify((c1, c2, x, p), expr)
@@ -47,13 +188,7 @@ def Chernoff_bounds(task, higherPriorityTasks, t, s):
             # print np.float128(probstr)*np.float128(mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**np.ceil(t/i['period'])
             # print probstr
             # print "taskidx:"+str(count)
-
-    #itself
     probstr = str(np.float128(probstr) * np.float128(mgf(task['execution'], task['abnormal_exe'], s, task['prob']))**int(np.ceil(t/task['period'])))
-    # if s > 72:
-    #     print "s:"
-    #     print probstr
-    #     print
 
     return np.float128(probstr)
 

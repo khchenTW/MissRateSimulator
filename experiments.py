@@ -27,9 +27,9 @@ hardTaskFactor = [1.83]
 #utilization = [70]
 
 # Setting for Fig5:
-#faultRate = [10**-4]
-#power = [4]
-#utilization = [75]
+faultRate = [10**-4]
+power = [4]
+utilization = [75]
 
 # Setting for Fig6:
 # faultRate = [10**-2, 10**-4, 10**-6]
@@ -37,15 +37,16 @@ hardTaskFactor = [1.83]
 # utilization = [60]
 
 # Setting for plottingS:
-faultRate = [10**-4]
-power = [4]
-utilization = [60]
+#faultRate = [10**-4]
+#power = [4]
+#utilization = [60]
 
 sumbound = 4
 # for the motivational example
 #jobnum = 5000000
 # for the evalutions
 jobnum = 2000000
+#jobnum = 2
 lookupTable = []
 conlookupTable = []
 
@@ -69,12 +70,12 @@ def taskSetInput(n, uti, fr, por, tasksets_amount, part, filename):
     np.save(filename, tasksets)
     return filename
 
-def lookup(k, tasks, numDeadline, mode):
+def lookup(k, tasks, fr, numDeadline, mode):
     global lookupTable
     global conlookupTable
     if mode == 0:
         if lookupTable[k][numDeadline] == -1:
-            lookupTable[k][numDeadline] = EPST.probabilisticTest_k(k, tasks, numDeadline, Chernoff_bounds, 1)
+            lookupTable[k][numDeadline] = EPST.probabilisticTest_s(k, tasks, numDeadline, SympyChernoff, -1)
         return lookupTable[k][numDeadline]
     else:
         if conlookupTable[k][numDeadline] == -1:
@@ -82,10 +83,10 @@ def lookup(k, tasks, numDeadline, mode):
             probs = []
             states = []
             pruned = []
-            conlookupTable[k][numDeadline] = deadline_miss_probability.calculate_pruneCON(tasks, 0.001, probs, states, pruned, numDeadline)
+            conlookupTable[k][numDeadline] = deadline_miss_probability.calculate_pruneCON(tasks, fr, probs, states, pruned, numDeadline)
         return conlookupTable[k][numDeadline]
 
-def Approximation(n, J, k, tasks, mode=0):
+def Approximation(n, fr, J, k, tasks, mode=0):
     # mode 0 == EMR, 1 = CON
     # J is the bound of the idx
     if mode == 0:
@@ -97,7 +98,7 @@ def Approximation(n, J, k, tasks, mode=0):
 
     probsum = 0
     for x in range(1, J+1):
-        probsum += lookup(k, tasks, x, mode)*x
+        probsum += lookup(k, tasks, fr, x, mode)*x
 
     if probsum == 0:
         return 0
@@ -105,11 +106,14 @@ def Approximation(n, J, k, tasks, mode=0):
         #print 1/(1+(1-lookup(k, tasks, 1))/probsum)
         #print probsum/(1+probsum-lookup(k, tasks, 1))
         #for avoiding numerical inconsistance
-        return probsum/(1+probsum-lookup(k, tasks, 1, mode))
+        return probsum/(1+probsum-lookup(k, tasks, fr, 1, mode))
 
 
 def experiments_sim(n, por, fr, uti, inputfile):
 
+    filePrefix = 'sim'
+    folder = 'figures/'
+    pp = PdfPages(folder + "task" + repr(n) + "-" + filePrefix + '.pdf')
     SimRateList = []
     ExpectedMissRate = []
     ConMissRate = []
@@ -118,10 +122,12 @@ def experiments_sim(n, por, fr, uti, inputfile):
 
     tasksets = np.load(inputfile+'.npy')
 
-    for tasks in tasksets:
+    for idx, tasks in enumerate(tasksets):
+
         global lookupTable
         global conlookupTable
 
+        print "Running simulator"
         simulator=MissRateSimulator(n, tasks)
 
         # EPST + Theorem2
@@ -130,12 +136,13 @@ def experiments_sim(n, por, fr, uti, inputfile):
         lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
         conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
 
-        tmp = Approximation(n, sumbound, n-1, tasks, 0)
+        print "Approximate the miss rate"
+        tmp = Approximation(n, fr, sumbound, n-1, tasks, 0)
         if tmp < 10**-4:
             continue
         else:
             ExpectedMissRate.append(tmp)
-            ConMissRate.append(Approximation(n, sumbound, n-1, tasks, 1))
+            ConMissRate.append(Approximation(n, fr, sumbound, n-1, tasks, 1))
 
         simulator.dispatcher(jobnum, fr)
         SimRateList.append(simulator.missRate(n-1))
@@ -147,8 +154,19 @@ def experiments_sim(n, por, fr, uti, inputfile):
     print ExpectedMissRate
     print "ConMissRate:"
     print ConMissRate
+    tasksets_amount = len(tasksets)
+    filename = 'outputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_Sim'
+    np.save(filename, SimRateList)
+    SIM = np.load(filename+'.npy')
+    filename = 'outputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_EMR'
+    np.save(filename, ExpectedMissRate)
+    EMR = np.load(filename+'.npy')
+    filename = 'outputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_CON'
+    np.save(filename, ConMissRate)
+    CON = np.load(filename+'.npy')
 
 
+    '''
     ofile = "txt/COMPARISON_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
     fo = open(ofile, "wb")
     fo.write("SimRateList:")
@@ -164,9 +182,52 @@ def experiments_sim(n, por, fr, uti, inputfile):
     fo.write(str(ExpectedMissRate))
     fo.write("\n")
     fo.close()
+    '''
+    #prune for 20 sets
+    #print len(SimRateList)
+    #print len(ConMissRate)
+    #print len(ExpectedMissRate)
+
+
+    SIM = SIM[:20]
+    EMR = EMR[:20]
+    CON = CON[:20]
+
+    width = 0.15
+    ind = np.arange(5) # the x locations for the groups
+    title = 'Tasks: '+ repr(n) + ', $U^N_{SUM}$:'+repr(uti)+'%' + ', Fault Rate:'+repr(fr)
+    plt.title(title, fontsize=20)
+    plt.grid(True)
+    plt.ylabel('Expected Miss Rate', fontsize=20)
+    plt.yscale("log")
+    plt.ylim([10**-5, 10**0])
+    pltlabels=('S1','S2','S3','S4','S5','S6','S7','S8','S9','S10','S11','S12','S13','S14','S15','S16','S17','S18','S19','S20')
+    #pltlabels=('S1','S2','S3','S4','S5')
+    plt.xticks(ind + width /2, pltlabels)
+    plt.tick_params(axis='both', which='major',labelsize=18)
+    print ind
+    print SimRateList
+    try:
+        rects1 = plt.bar(ind-0.1, SIM, width, color='black', edgecolor='black')
+        rects2 = plt.bar(ind+0.1, CON, width, fill = False, edgecolor='black')
+        rects3 = plt.bar(ind+0.3, EMR, width, edgecolor='black', hatch='/')
+        plt.legend((rects1[0], rects2[0], rects3[0]),('SIM', 'CON', 'EMR'))
+    except ValueError:
+        print "Value ERROR!!!!!!!!!!"
+    figure = plt.gcf()
+    figure.set_size_inches([14.5,6.5])
+
+    # plt.legend(handles=[av, box, whisk], fontsize=16, frameon=True, loc=1)
+
+    #plt.show()
+    pp.savefig()
+    plt.clf()
+    pp.close()
+
 
 
 def experiments_emr(n, por, fr, uti, inputfile ):
+
     tasksets = np.load(inputfile+'.npy')
     stampPHIEMR = []
     stampPHICON = []
@@ -175,7 +236,12 @@ def experiments_emr(n, por, fr, uti, inputfile ):
     ExpectedMissRate = []
     print "number of tasksets:"+str(len(tasksets))
     for tasks in tasksets:
-        ExpectedMissRate.append(Approximation(n, sumbound, n-1, tasks, 0))
+        global lookupTable
+        global conlookupTable
+        lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
+        conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
+
+        ExpectedMissRate.append(Approximation(n, fr, sumbound, n-1, tasks, 0))
 
     print "Result for fr"+str(power[por])+"_uti"+str(uti)
     print "ExpMissRate:"
@@ -319,6 +385,7 @@ def experiments_art(n, por, fr, uti, inputfile):
     fo.write("\n")
     fo.close()
 
+'''
 def ploting_with_s(n, por, fr, uti, inputfile, delta, minS, maxS):
     filePrefix = 'plots-'
     folder = 'figures/'
@@ -353,7 +420,7 @@ def ploting_with_s(n, por, fr, uti, inputfile, delta, minS, maxS):
         pp.savefig()
         plt.clf()
         pp.close()
-
+'''
 
 
 def main():
@@ -388,9 +455,9 @@ def main():
             elif mode == 4:
                 # used to present the example illustrating the differences between the miss rate and the probability of deadline misses.
                 experiments_art(n, por, fr, uti, filename)
-            elif mode == 5:
-                # used to print out a continuous curve of results with different real value s
-                ploting_with_s(n, por, fr, uti, filename, 1, 0, 100)
+            # elif mode == 5:
+            #     # used to print out a continuous curve of results with different real value s
+            #     ploting_with_s(n, por, fr, uti, filename, 1, 0, 100)
             else:
                 raise NotImplementedError("Error: you use a mode without implementation")
 
