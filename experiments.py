@@ -13,7 +13,7 @@ import mixed_task_builder
 
 # for experiment 5
 import matplotlib
-# matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
@@ -123,6 +123,7 @@ def experiments_sim(n, por, fr, uti, inputfile):
 
     tasksets = np.load(inputfile+'.npy')
     tasksets_amount = len(tasksets)
+    pass_amount = 0
     try:
         filename = 'outputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_Sim'
         SIM = np.load(filename+'.npy')
@@ -136,6 +137,8 @@ def experiments_sim(n, por, fr, uti, inputfile):
     if Outputs is False:
         for idx, tasks in enumerate(tasksets):
 
+            if pass_amount == 20:
+                break
             global lookupTable
             global conlookupTable
 
@@ -153,6 +156,7 @@ def experiments_sim(n, por, fr, uti, inputfile):
             if tmp < 10**-4:
                 continue
             else:
+                pass_amount += 1
                 ExpectedMissRate.append(tmp)
                 ConMissRate.append(Approximation(n, fr, sumbound, n-1, tasks, 1))
 
@@ -194,13 +198,13 @@ def experiments_sim(n, por, fr, uti, inputfile):
     fo.write("\n")
     fo.close()
     '''
-    #prune for 20 sets
-    print "Num of SIM:",len(SimRateList)
-    print "Num of CON:",len(ConMissRate)
-    print "Num of EMR:",len(ExpectedMissRate)
-    SIM = SIM[:20]
-    EMR = EMR[:20]
-    CON = CON[:20]
+    #prune for leq 20 sets
+    print "Num of SIM:",len(SIM)
+    print "Num of CON:",len(CON)
+    print "Num of EMR:",len(EMR)
+    #SIM = SIM[:20]
+    #EMR = EMR[:20]
+    #CON = CON[:20]
 
     width = 0.15
     ind = np.arange(20) # the x locations for the groups
@@ -210,8 +214,9 @@ def experiments_sim(n, por, fr, uti, inputfile):
     plt.ylabel('Expected Miss Rate', fontsize=20)
     plt.yscale("log")
     plt.ylim([10**-5, 10**0])
-    pltlabels=('S1','S2','S3','S4','S5','S6','S7','S8','S9','S10','S11','S12','S13','S14','S15','S16','S17','S18','S19','S20')
-    #pltlabels=('S1','S2','S3','S4','S5')
+    pltlabels = []
+    for idt, tt in enumerate(SIM):
+        pltlabels.append('S'+str(idt))
     plt.xticks(ind + width /2, pltlabels)
     plt.tick_params(axis='both', which='major',labelsize=18)
     print ind
