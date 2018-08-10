@@ -111,6 +111,7 @@ def Approximation(n, fr, J, k, tasks, mode=0):
 
 def experiments_sim(n, por, fr, uti, inputfile):
 
+    Outputs = True
     filePrefix = 'sim'
     folder = 'figures/'
     pp = PdfPages(folder + "task" + repr(n) + "-" + filePrefix + '.pdf')
@@ -121,49 +122,59 @@ def experiments_sim(n, por, fr, uti, inputfile):
     stampEPST = []
 
     tasksets = np.load(inputfile+'.npy')
+    tasksets_amount = len(tasksets)
+    try:
+        filename = 'outputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_Sim'
+        SIM = np.load(filename+'.npy')
+        filename = 'outputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_EMR'
+        EMR = np.load(filename+'.npy')
+        filename = 'outputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_CON'
+        CON = np.load(filename+'.npy')
+    except IOError:
+        Outputs = False
 
-    for idx, tasks in enumerate(tasksets):
+    if Outputs is False:
+        for idx, tasks in enumerate(tasksets):
 
-        global lookupTable
-        global conlookupTable
+            global lookupTable
+            global conlookupTable
 
-        print "Running simulator"
-        simulator=MissRateSimulator(n, tasks)
+            print "Running simulator"
+            simulator=MissRateSimulator(n, tasks)
 
-        # EPST + Theorem2
-        # report the miss rate of the lowest priority task
+            # EPST + Theorem2
+            # report the miss rate of the lowest priority task
 
-        lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
-        conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
+            lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
+            conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
 
-        print "Approximate the miss rate"
-        tmp = Approximation(n, fr, sumbound, n-1, tasks, 0)
-        if tmp < 10**-4:
-            continue
-        else:
-            ExpectedMissRate.append(tmp)
-            ConMissRate.append(Approximation(n, fr, sumbound, n-1, tasks, 1))
+            print "Approximate the miss rate"
+            tmp = Approximation(n, fr, sumbound, n-1, tasks, 0)
+            if tmp < 10**-4:
+                continue
+            else:
+                ExpectedMissRate.append(tmp)
+                ConMissRate.append(Approximation(n, fr, sumbound, n-1, tasks, 1))
 
-        simulator.dispatcher(jobnum, fr)
-        SimRateList.append(simulator.missRate(n-1))
+            simulator.dispatcher(jobnum, fr)
+            SimRateList.append(simulator.missRate(n-1))
 
+        filename = 'outputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_Sim'
+        np.save(filename, SimRateList)
+        SIM = np.load(filename+'.npy')
+        filename = 'outputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_EMR'
+        np.save(filename, ExpectedMissRate)
+        EMR = np.load(filename+'.npy')
+        filename = 'outputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_CON'
+        np.save(filename, ConMissRate)
+        CON = np.load(filename+'.npy')
     print "Result for fr"+str(power[por])+"_uti"+str(uti)
     print "SimRateList:"
-    print SimRateList
+    print SIM
     print "ExpectedMissRate:"
-    print ExpectedMissRate
+    print EMR
     print "ConMissRate:"
-    print ConMissRate
-    tasksets_amount = len(tasksets)
-    filename = 'outputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_Sim'
-    np.save(filename, SimRateList)
-    SIM = np.load(filename+'.npy')
-    filename = 'outputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_EMR'
-    np.save(filename, ExpectedMissRate)
-    EMR = np.load(filename+'.npy')
-    filename = 'outputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_CON'
-    np.save(filename, ConMissRate)
-    CON = np.load(filename+'.npy')
+    print CON
 
 
     '''
@@ -184,17 +195,15 @@ def experiments_sim(n, por, fr, uti, inputfile):
     fo.close()
     '''
     #prune for 20 sets
-    #print len(SimRateList)
-    #print len(ConMissRate)
-    #print len(ExpectedMissRate)
-
-
+    print "Num of SIM:",len(SimRateList)
+    print "Num of CON:",len(ConMissRate)
+    print "Num of EMR:",len(ExpectedMissRate)
     SIM = SIM[:20]
     EMR = EMR[:20]
     CON = CON[:20]
 
     width = 0.15
-    ind = np.arange(5) # the x locations for the groups
+    ind = np.arange(20) # the x locations for the groups
     title = 'Tasks: '+ repr(n) + ', $U^N_{SUM}$:'+repr(uti)+'%' + ', Fault Rate:'+repr(fr)
     plt.title(title, fontsize=20)
     plt.grid(True)
@@ -206,7 +215,6 @@ def experiments_sim(n, por, fr, uti, inputfile):
     plt.xticks(ind + width /2, pltlabels)
     plt.tick_params(axis='both', which='major',labelsize=18)
     print ind
-    print SimRateList
     try:
         rects1 = plt.bar(ind-0.1, SIM, width, color='black', edgecolor='black')
         rects2 = plt.bar(ind+0.1, CON, width, fill = False, edgecolor='black')
