@@ -202,9 +202,10 @@ def experiments_sim(n, por, fr, uti, inputfile):
     print "Num of SIM:",len(SIM)
     print "Num of CON:",len(CON)
     print "Num of EMR:",len(EMR)
-    #SIM = SIM[:20]
-    #EMR = EMR[:20]
-    #CON = CON[:20]
+    if len(SIM) > 20:
+        SIM = SIM[:20]
+        EMR = EMR[:20]
+        CON = CON[:20]
 
     width = 0.15
     ind = np.arange(20) # the x locations for the groups
