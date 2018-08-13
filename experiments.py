@@ -45,8 +45,8 @@ sumbound = 4
 # for the motivational example
 #jobnum = 5000000
 # for the evalutions
-jobnum = 2000000
-#jobnum = 2
+#jobnum = 2000000
+jobnum = 2
 lookupTable = []
 conlookupTable = []
 
@@ -70,44 +70,100 @@ def taskSetInput(n, uti, fr, por, tasksets_amount, part, filename):
     np.save(filename, tasksets)
     return filename
 
-def lookup(k, tasks, fr, numDeadline, mode):
-    global lookupTable
-    global conlookupTable
-    if mode == 0:
-        if lookupTable[k][numDeadline] == -1:
-            lookupTable[k][numDeadline] = EPST.probabilisticTest_s(k, tasks, numDeadline, SympyChernoff, -1)
-        return lookupTable[k][numDeadline]
-    else:
-        if conlookupTable[k][numDeadline] == -1:
-            #for ECRTS
-            probs = []
-            states = []
-            pruned = []
-            conlookupTable[k][numDeadline] = deadline_miss_probability.calculate_pruneCON(tasks, fr, probs, states, pruned, numDeadline)
-        return conlookupTable[k][numDeadline]
+#def lookup(k, tasks, fr, numDeadline, mode):
+#    global lookupTable
+#    global conlookupTable
+#    if mode == 0:
+#        if lookupTable[k][numDeadline] == -1:
+#            lookupTable[k][numDeadline] = EPST.probabilisticTest_s(k, tasks, numDeadline, SympyChernoff, -1)
+#        return lookupTable[k][numDeadline]
+#    else:
+#        if conlookupTable[k][numDeadline] == -1:
+#            #for ECRTS
+#            probs = []
+#            states = []
+#            pruned = []
+#            conlookupTable[k][numDeadline] = deadline_miss_probability.calculate_pruneCON(tasks, fr, probs, states, pruned, numDeadline)
+#        return conlookupTable[k][numDeadline]
 
-def Approximation(n, fr, J, k, tasks, mode=0):
+#def Approximation(n, fr, J, k, tasks, mode=0):
+#    # mode 0 == EMR, 1 = CON
+#    # J is the bound of the idx
+#    if mode == 0:
+#        global lookupTable
+#        lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
+#    else:
+#        global conlookupTable
+#        conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
+
+#    probsum = 0
+#    # this is the summation from 1 to J (prob * j)
+#    for x in range(1, J+1):
+#        probsum += lookup(k, tasks, fr, x, mode)*x
+
+#    if probsum == 0:
+#        return 0
+#    else:
+#        #print 1/(1+(1-lookup(k, tasks, 1))/probsum)
+#        #print probsum/(1+probsum-lookup(k, tasks, 1))
+#        #for avoiding numerical inconsistance
+#        return probsum/(1+probsum-lookup(k, tasks, fr, 1, mode))
+
+def NewApproximation(n, fr, J, k, tasks, mode=0):
     # mode 0 == EMR, 1 = CON
     # J is the bound of the idx
-    if mode == 0:
-        global lookupTable
-        lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
-    else:
-        global conlookupTable
-        conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
-
-    probsum = 0
+    probsum = 0.
+    phikl = np.float128(1.0)
+    # this is the summation from 1 to J (prob * j)
+    print "which mode:", mode
     for x in range(1, J+1):
-        probsum += lookup(k, tasks, fr, x, mode)*x
+        phikl = wRoutine(x, mode)
+        print phikl
+        probsum += phikl*x
 
     if probsum == 0:
         return 0
     else:
-        #print 1/(1+(1-lookup(k, tasks, 1))/probsum)
-        #print probsum/(1+probsum-lookup(k, tasks, 1))
         #for avoiding numerical inconsistance
-        return probsum/(1+probsum-lookup(k, tasks, fr, 1, mode))
+        return probsum/(1+probsum-wRoutine(1, mode))
 
+def wRoutine(l, mode=0):
+    #suppose that the table is ready
+    #this function return \phi_{k, w}
+    resProb = np.float128(0.)
+    listProb = []
+    if l == 0:
+        return 1.0
+    else:
+        for w in range(1, l+1):
+            if mode == 0:
+                resProb = lookupTable[w]*wRoutine(l-w, mode)
+            else:
+                resProb = conlookupTable[w]*wRoutine(l-w, mode)
+            listProb.append(resProb)
+    return max(listProb)
+
+def prepareTable(n, fr, J, k, tasks, mode=0):
+    tmpList = []
+    # this is the Lemma 1 in the paper
+    if mode == 0:
+        global lookupTable
+        lookupTable = [-1 for x in range(sumbound+1)]
+        hpTasks = tasks[:k]
+        for x in range(1, J+1):
+            #here calculate the \phi^\theta_{k, x}
+            tmpList = EPST.ktda_k(tasks[k], hpTasks, x, SympyChernoff, -1)
+            lookupTable[x] = tmpList[0]
+    else:
+        global conlookupTable
+        conlookupTable = [-1 for x in range(sumbound+1)]
+        for x in range(1, J+1):
+            #here calculate the \phi^\theta_{k, x}
+            #for ECRTS
+            probs = []
+            states = []
+            pruned = []
+            conlookupTable[x] = deadline_miss_probability.calculate_pruneCON(tasks, fr, probs, states, pruned, x)
 
 def experiments_sim(n, por, fr, uti, inputfile):
 
@@ -148,17 +204,17 @@ def experiments_sim(n, por, fr, uti, inputfile):
             # EPST + Theorem2
             # report the miss rate of the lowest priority task
 
-            lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
-            conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
 
             print "Approximate the miss rate"
-            tmp = Approximation(n, fr, sumbound, n-1, tasks, 0)
+            prepareTable(n, fr, sumbound, n-1, tasks, 0)
+            tmp = NewApproximation(n, fr, sumbound, n-1, tasks, 0)
             if tmp < 10**-4:
                 continue
             else:
                 pass_amount += 1
                 ExpectedMissRate.append(tmp)
-                ConMissRate.append(Approximation(n, fr, sumbound, n-1, tasks, 1))
+                prepareTable(n, fr, sumbound, n-1, tasks, 1)
+                ConMissRate.append(NewApproximation(n, fr, sumbound, n-1, tasks, 1))
 
             simulator.dispatcher(jobnum, fr)
             SimRateList.append(simulator.missRate(n-1))
@@ -198,17 +254,18 @@ def experiments_sim(n, por, fr, uti, inputfile):
     fo.write("\n")
     fo.close()
     '''
+    ind = np.arange(len(EMR))
     #prune for leq 20 sets
     print "Num of SIM:",len(SIM)
     print "Num of CON:",len(CON)
     print "Num of EMR:",len(EMR)
-    if len(SIM) > 20:
+    if len(EMR) > 20:
         SIM = SIM[:20]
         EMR = EMR[:20]
         CON = CON[:20]
+        ind = np.arange(20) # the x locations for the groups
 
     width = 0.15
-    ind = np.arange(20) # the x locations for the groups
     title = 'Tasks: '+ repr(n) + ', $U^N_{SUM}$:'+repr(uti)+'%' + ', Fault Rate:'+repr(fr)
     plt.title(title, fontsize=20)
     plt.grid(True)
@@ -216,7 +273,7 @@ def experiments_sim(n, por, fr, uti, inputfile):
     plt.yscale("log")
     plt.ylim([10**-5, 10**0])
     pltlabels = []
-    for idt, tt in enumerate(SIM):
+    for idt, tt in enumerate(EMR):
         pltlabels.append('S'+str(idt))
     plt.xticks(ind + width /2, pltlabels)
     plt.tick_params(axis='both', which='major',labelsize=18)
@@ -255,7 +312,7 @@ def experiments_emr(n, por, fr, uti, inputfile ):
         lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
         conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
 
-        ExpectedMissRate.append(Approximation(n, fr, sumbound, n-1, tasks, 0))
+        ExpectedMissRate.append(NewApproximation(n, fr, sumbound, n-1, tasks, 0))
 
     print "Result for fr"+str(power[por])+"_uti"+str(uti)
     print "ExpMissRate:"
