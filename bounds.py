@@ -49,7 +49,7 @@ def SympyChernoff(task, higherPriorityTasks, t, s):
     # print
 
     # x0 is init guess
-    x0 = np.float128(0.1) # dmgf(x0) < 0
+    x0 = np.float128(0.0) # dmgf(x0) < 0
     delta = 10
     x1 = np.float128(delta)
     m = np.float128(0)

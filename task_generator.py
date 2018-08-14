@@ -41,21 +41,7 @@ def UniDist(n,U_min,U_max):
     for i in range(n-1):
         uBkt=random.uniform(U_min, U_max)
         USet.append(uBkt)
-"""
-def CSet_generate(Pmin,numLog):
-	global USet,PSet
-	j=0
-	for i in USet:
-		thN=j%numLog
-		#p=random.uniform(Pmin*math.pow(10, thN), Pmin*math.pow(10, thN+1))
-		p=random.uniform(10, 100)
-		pair={}
-		pair['period']=p
-		pair['deadline']=p#*random.uniform(1)
-		pair['execution']=i*p
-		PSet.append(pair)
-		j=j+1;
-"""
+
 def CSet_generate(Pmin,numLog):
     global USet,PSet
     j=0
@@ -105,8 +91,6 @@ def taskGeneration_p(numTasks,uTotal):
     init()
     UUniFast(numTasks,uTotal/100)
     CSet_generate(1,2)
-    fo = open(ofile, "ab")
-    print >>fo, json.dumps(PSet)
     return PSet
 
 def taskGeneration_int(numTasks,uTotal):
@@ -120,7 +104,8 @@ def taskGeneration_rounded(numTasks,uTotal):
     random.seed()
     init()
     UUniFast(numTasks,uTotal/100)
-    CSet_generate_rounded(10,2)
+    #CSet_generate_rounded(10,2)
+    CSet_generate_rounded(1,2)
     return PSet
 
 

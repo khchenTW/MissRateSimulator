@@ -175,6 +175,7 @@ def ktda_k(task, higherPriorityTasks,  window, ieq, s):
                 res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='bounded', bounds=[0,s])
                 ##use x to find the minimal
                 probRes = ieq(task, higherPriorityTasks, fy, res.x)
+                selecteds = res.x
             except TypeError:
                 print "TypeError"
                 probRes = 1

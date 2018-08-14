@@ -22,14 +22,14 @@ from matplotlib import rcParams
 hardTaskFactor = [1.83]
 
 # Setting for Fig4:
-#faultRate = [10**-4]
-#power = [4]
-#utilization = [70]
-
-# Setting for Fig5:
 faultRate = [10**-4]
 power = [4]
-utilization = [75]
+utilization = [70]
+
+# Setting for Fig5:
+#faultRate = [10**-4]
+#power = [4]
+#utilization = [75]
 
 # Setting for Fig6:
 # faultRate = [10**-2, 10**-4, 10**-6]
@@ -53,8 +53,8 @@ conlookupTable = []
 # for task generation
 def taskGeneWithTDA(uti, fr, n):
     while (1):
-        tasks = task_generator.taskGeneration_p(n,uti)
-        #tasks = task_generator.taskGeneration_rounded(n, uti)
+        #tasks = task_generator.taskGeneration_p(n,uti)
+        tasks = task_generator.taskGeneration_rounded(n, uti)
         tasks = mixed_task_builder.mixed_task_set(tasks, hardTaskFactor[0], fr)
 
         if TDA.TDAtest( tasks ) == 0:
@@ -112,13 +112,15 @@ def taskSetInput(n, uti, fr, por, tasksets_amount, part, filename):
 def NewApproximation(n, fr, J, k, tasks, mode=0):
     # mode 0 == EMR, 1 = CON
     # J is the bound of the idx
+    prepareTable(n, fr, J, n-1, tasks, mode)
     probsum = 0.
     phikl = np.float128(1.0)
     # this is the summation from 1 to J (prob * j)
-    print "which mode:", mode
+    #print "which mode:", mode
     for x in range(1, J+1):
+        #print "for index:", x
         phikl = wRoutine(x, mode)
-        print phikl
+        # print phikl
         probsum += phikl*x
 
     if probsum == 0:
@@ -129,7 +131,7 @@ def NewApproximation(n, fr, J, k, tasks, mode=0):
 
 def wRoutine(l, mode=0):
     #suppose that the table is ready
-    #this function return \phi_{k, w}
+    #this is the Lemma 1 in the paper
     resProb = np.float128(0.)
     listProb = []
     if l == 0:
@@ -140,23 +142,27 @@ def wRoutine(l, mode=0):
                 resProb = lookupTable[w]*wRoutine(l-w, mode)
             else:
                 resProb = conlookupTable[w]*wRoutine(l-w, mode)
+            # if resProb == 0.0:
+            #     print "resProb is 0", w, lookupTable[w], wRoutine(l-w, mode)
             listProb.append(resProb)
+    # print "l is ", l,  listProb
     return max(listProb)
 
 def prepareTable(n, fr, J, k, tasks, mode=0):
     tmpList = []
-    # this is the Lemma 1 in the paper
     if mode == 0:
         global lookupTable
-        lookupTable = [-1 for x in range(sumbound+1)]
+        lookupTable = [-1 for x in range(J+1)]
         hpTasks = tasks[:k]
         for x in range(1, J+1):
             #here calculate the \phi^\theta_{k, x}
             tmpList = EPST.ktda_k(tasks[k], hpTasks, x, SympyChernoff, -1)
+            #tmpList = EPST.ktda_k(tasks[k], hpTasks, x, Chernoff_bounds, 1)
+            #print EPST.ktda_k(tasks[k], hpTasks, x, SympyChernoff, -1)
             lookupTable[x] = tmpList[0]
     else:
         global conlookupTable
-        conlookupTable = [-1 for x in range(sumbound+1)]
+        conlookupTable = [-1 for x in range(J+1)]
         for x in range(1, J+1):
             #here calculate the \phi^\theta_{k, x}
             #for ECRTS
@@ -206,14 +212,12 @@ def experiments_sim(n, por, fr, uti, inputfile):
 
 
             print "Approximate the miss rate"
-            prepareTable(n, fr, sumbound, n-1, tasks, 0)
             tmp = NewApproximation(n, fr, sumbound, n-1, tasks, 0)
             if tmp < 10**-4:
                 continue
             else:
                 pass_amount += 1
                 ExpectedMissRate.append(tmp)
-                prepareTable(n, fr, sumbound, n-1, tasks, 1)
                 ConMissRate.append(NewApproximation(n, fr, sumbound, n-1, tasks, 1))
 
             simulator.dispatcher(jobnum, fr)
@@ -307,11 +311,6 @@ def experiments_emr(n, por, fr, uti, inputfile ):
     ExpectedMissRate = []
     print "number of tasksets:"+str(len(tasksets))
     for tasks in tasksets:
-        global lookupTable
-        global conlookupTable
-        lookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
-        conlookupTable = [[-1 for x in range(sumbound+2)] for y in range(n)]
-
         ExpectedMissRate.append(NewApproximation(n, fr, sumbound, n-1, tasks, 0))
 
     print "Result for fr"+str(power[por])+"_uti"+str(uti)
@@ -328,24 +327,23 @@ def experiments_emr(n, por, fr, uti, inputfile ):
 
 def trendsOfPhiMI(n, por, fr, uti, inputfile):
     tasksets = np.load(inputfile+'.npy')
-    ClistRes = []
-    listRes = []
-    xlistRes = []
-    timeEMR = []
-    timeCON = []
-    for tasks in tasksets:
-        CResults = []
-        Results = []
-        xResults = []
+    CResults = []
+    Results = []
+    xResults = []
+
+    runtimeEMR = []
+    runtimeCON = []
+    for x in range(1, 11):
         stampPHIEMR = []
         stampPHICON = []
-
-        for x in range(1, 11):
-        #for x in range(1, 4):
+    # for x in range(1, 4):
+        for tasks in tasksets:
             t1 = time.clock()
-            r = EPST.probabilisticTest_k(n-1, tasks, x, Chernoff_bounds, 1)
+            prepareTable(n, fr, x, n-1, tasks, 0)
+            r = wRoutine(x,0)
             t2 = time.clock()
             diff = t2-t1
+            print ("--- Chernoff %s seconds ---" % diff)
             stampPHIEMR.append(diff)
 
             Results.append(r)
@@ -356,17 +354,27 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
                 states = []
                 pruned = []
                 t3 = time.clock()
-                c = deadline_miss_probability.calculate_pruneCON(tasks, 0.001, probs, states, pruned, x)
+                prepareTable(n, fr, x, n-1, tasks, 1)
+                # c = deadline_miss_probability.calculate_pruneCON(tasks, fr, probs, states, pruned, x)
+                c = wRoutine(x, 1)
                 t4 = time.clock()
                 diff = t4-t3
+                print ("--- CON %s seconds ---" % diff)
                 stampPHICON.append(diff)
                 CResults.append(c)
-        timeEMR.append(stampPHIEMR)
-        timeCON.append(stampPHICON)
-        xlistRes.append(xResults)
-        ClistRes.append(CResults)
-        listRes.append(Results)
-
+        runtimeEMR.append(reduce(lambda y, z: y + z, stampPHIEMR)/len(stampPHIEMR))
+        runtimeCON.append(reduce(lambda y, z: y + z, stampPHICON)/len(stampPHICON))
+    for x, timeS in enumerate(runtimeEMR):
+        print ("EMR Avg %s seconds for index %s" %(timeS, x+1))
+    for x, timeS in enumerate(runtimeCON):
+        print ("CON Avg %s seconds for index %s" %(timeS, x+1))
+    print stampPHIEMR
+    print stampPHICON
+    # # collect results
+    # xlistRes.append(xResults)
+    # ClistRes.append(CResults)
+    # listRes.append(Results)
+    '''
     ofile = "txt/trendsC_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
     fo = open(ofile, "wb")
     fo.write("CPhi")
@@ -418,6 +426,7 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
     fo.write("\n")
 
     fo.close()
+    '''
 
 def experiments_art(n, por, fr, uti, inputfile):
     # this is for artifical test (motivational example)
