@@ -51,14 +51,15 @@ def SympyChernoff(task, higherPriorityTasks, t, s):
     # x0 is init guess
     x0 = np.float128(0.0) # dmgf(x0) < 0
     delta = 10
-    x1 = np.float128(delta)
+    x1 = x0 + np.float128(delta)
     m = np.float128(0)
     eps = np.float128("1e-50")
     while dmgf(x1) < 0:
         # find the upper bound of s
-        x1 = x0 + delta
+        x1 = x1 + delta
+        # print "finding", x1
     counter = 0
-    while np.float128((x1 - x0)/2) > eps and counter < 50:
+    while np.float128((x1 - x0)/2) > eps and counter < 20:
         counter += 1
         m = np.float128((x0+x1)/2)
         if dmgf(m) == 0:

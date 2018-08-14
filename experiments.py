@@ -18,6 +18,20 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib import rcParams
+rcParams['font.family'] = 'sans-serif'
+rcParams['font.sans-serif'] = ['Tahoma']
+
+rcParams['ps.useafm'] = True
+rcParams['pdf.use14corefonts'] = True
+rcParams['text.usetex'] = True
+
+marker = ['o','v','^','s','p','d','o', 'v','+','*','D','x','+','p',]
+colors = ['r','g','b','k','m','c','c','m','k','b','r','g','y','m','b']
+line = [':',':',':','-','-','-','-','-','-']
+line = [':',':',':','-','-','-.','-.','-.','-.','-','-','-','-','-','-']
+line = ['-','-','-.',':',':',':','-.','-.','-.','-','-','-','-','-','-']
+line = ['-','-','-','--','--','--','-.','-.','-.','-','-','-','-','-','-']
+
 
 hardTaskFactor = [1.83]
 
@@ -158,7 +172,8 @@ def prepareTable(n, fr, J, k, tasks, mode=0):
             #here calculate the \phi^\theta_{k, x}
             tmpList = EPST.ktda_k(tasks[k], hpTasks, x, SympyChernoff, -1)
             #tmpList = EPST.ktda_k(tasks[k], hpTasks, x, Chernoff_bounds, 1)
-            #print EPST.ktda_k(tasks[k], hpTasks, x, SympyChernoff, -1)
+            print EPST.ktda_k(tasks[k], hpTasks, x, SympyChernoff, -1)
+            #print EPST.ktda_k(tasks[k], hpTasks, x, Chernoff_bounds, 1)
             lookupTable[x] = tmpList[0]
     else:
         global conlookupTable
@@ -326,107 +341,144 @@ def experiments_emr(n, por, fr, uti, inputfile ):
     fo.close()
 
 def trendsOfPhiMI(n, por, fr, uti, inputfile):
+
+    Outputs = True
+    filePrefix = 'trends'
+    folder = 'figures/'
+    pp = PdfPages(folder + "task" + repr(n) + "-" + filePrefix + '.pdf')
+    #upperJ = 11
+    upperJ = 4
+
     tasksets = np.load(inputfile+'.npy')
+    tasksets_amount = len(tasksets)
     CResults = []
     Results = []
     xResults = []
 
     runtimeEMR = []
     runtimeCON = []
-    for x in range(1, 11):
-        stampPHIEMR = []
-        stampPHICON = []
-    # for x in range(1, 4):
-        for tasks in tasksets:
-            t1 = time.clock()
-            prepareTable(n, fr, x, n-1, tasks, 0)
-            r = wRoutine(x,0)
-            t2 = time.clock()
-            diff = t2-t1
-            print ("--- Chernoff %s seconds ---" % diff)
-            stampPHIEMR.append(diff)
+    try:
+        filename = 'outputs/trends'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_EMR'
+        runtimeEMR = np.load(filename+'.npy')
+        filename = 'outputs/trends'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_CON'
+        runtimeCON = np.load(filename+'.npy')
+    except IOError:
+        Outputs = False
 
-            Results.append(r)
-            xResults.append(r*x)
-            if x < 8:
-            #if x < 3:
-                probs = []
-                states = []
-                pruned = []
-                t3 = time.clock()
-                prepareTable(n, fr, x, n-1, tasks, 1)
-                # c = deadline_miss_probability.calculate_pruneCON(tasks, fr, probs, states, pruned, x)
-                c = wRoutine(x, 1)
-                t4 = time.clock()
-                diff = t4-t3
-                print ("--- CON %s seconds ---" % diff)
-                stampPHICON.append(diff)
-                CResults.append(c)
-        runtimeEMR.append(reduce(lambda y, z: y + z, stampPHIEMR)/len(stampPHIEMR))
-        runtimeCON.append(reduce(lambda y, z: y + z, stampPHICON)/len(stampPHICON))
+
+    if Outputs is False:
+        runtimeEMR = []
+        runtimeCON = []
+        for x in range(1, upperJ):
+        # for x in range(1, 4):
+            stampPHIEMR = []
+            stampPHICON = []
+            print x
+            for tasks in tasksets:
+                t1 = time.clock()
+                prepareTable(n, fr, x, n-1, tasks, 0)
+                r = wRoutine(x,0)
+                t2 = time.clock()
+                diff = t2-t1
+                print ("--- Chernoff %s seconds ---" % diff)
+                stampPHIEMR.append(diff)
+
+                Results.append(r)
+                xResults.append(r*x)
+                #if x < upperJ-3:
+                if x < 3:
+                    probs = []
+                    states = []
+                    pruned = []
+                    t3 = time.clock()
+                    prepareTable(n, fr, x, n-1, tasks, 1)
+                    # c = deadline_miss_probability.calculate_pruneCON(tasks, fr, probs, states, pruned, x)
+                    c = wRoutine(x, 1)
+                    t4 = time.clock()
+                    diff = t4-t3
+                    print ("--- CON %s seconds ---" % diff)
+                    stampPHICON.append(diff)
+                    CResults.append(c)
+            runtimeEMR.append(stampPHIEMR)
+            # reduce(lambda y, z: y + z, stampPHIEMR)/len(stampPHIEMR)
+            if len(stampPHICON) > 0:
+                runtimeCON.append(stampPHICON)
+                # reduce(lambda y, z: y + z, stampPHICON)/len(stampPHICON)
+
+        filename = 'outputs/trends'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_EMR'
+        np.save(filename, runtimeEMR)
+        filename = 'outputs/trends'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_CON'
+        np.save(filename, runtimeCON)
+
     for x, timeS in enumerate(runtimeEMR):
-        print ("EMR Avg %s seconds for index %s" %(timeS, x+1))
+        print ("EMR Avg %s seconds for index %s" %(reduce(lambda y, z: y + z, timeS)/len(timeS), x+1))
+        print ("x:%s" % (x+1)) , timeS
     for x, timeS in enumerate(runtimeCON):
-        print ("CON Avg %s seconds for index %s" %(timeS, x+1))
-    print stampPHIEMR
-    print stampPHICON
+        print ("CON Avg %s seconds for index %s" %(reduce(lambda y, z: y + z, timeS)/len(timeS), x+1))
+        print ("x:%s" % (x+1)) , timeS
+
+
     # # collect results
     # xlistRes.append(xResults)
     # ClistRes.append(CResults)
     # listRes.append(Results)
-    '''
-    ofile = "txt/trendsC_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
-    fo = open(ofile, "wb")
-    fo.write("CPhi")
-    fo.write("\n")
-    for item in ClistRes:
-        fo.write(str(item))
-        fo.write("\n")
-    fo.write("\n")
-    fo.close()
 
-    ofile = "txt/trendsE_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
-    fo = open(ofile, "wb")
-    fo.write("EPhi")
-    fo.write("\n")
-    for item in listRes:
-        fo.write(str(item))
-        fo.write("\n")
-    fo.write("\n")
-    fo.close()
+    # Label
+    title = 'Tasks:' + repr(n) + ', $U^N_{SUM}$:'+repr(uti)+'%'
 
-    ofile = "txt/trendsX_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
-    fo = open(ofile, "wb")
-    fo.write("EPhi*j")
-    fo.write("\n")
-    for item in xlistRes:
-        fo.write(str(item))
-        fo.write("\n")
-    fo.write("\n")
-    fo.close()
+    #the blue box
+    boxprops = dict(linewidth=2, color='blue')
+    #the median line
+    medianprops = dict(linewidth=2.5, color='red')
+    whiskerprops = dict(linewidth=2.5, color='black')
+    capprops = dict(linewidth=2.5)
 
-    ofile = "txt/trendsTIME_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
-    fo = open(ofile, "wb")
-    fo.write("EMR Analysis Time")
-    fo.write("\n")
-    fo.write("[")
-    for item in timeEMR:
-        fo.write(str(item))
-        fo.write(",")
-    fo.write("]")
-    fo.write("\n")
+    plt.title(title, fontsize=20)
+    plt.grid(True)
+    plt.ylabel('Analysis Runtime (seconds)', fontsize=20)
+    plt.xlabel('Step j', fontsize=22)
+    # plt.yscale("log")
+    # ax.set_ylim([10**-28,10**0])
+    print len(runtimeEMR)
+    print len(runtimeCON)
 
-    fo.write("CON Analysis Time")
-    fo.write("\n")
-    fo.write("[")
-    for item in timeCON:
-        fo.write(str(item))
-        fo.write(",")
-    fo.write("]")
-    fo.write("\n")
+    labels = [j for j in range(1, upperJ)]
+    print labels
+    plt.xticks(labels)
 
-    fo.close()
-    '''
+    #plt.violinplot([x for x in runtimeEMR], showmedians=True, showmeans=False)
+    #plt.violinplot([x for x in runtimeCON], showmedians=True, showmeans=False)
+
+    #plt.errorbar(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR], yerr=1, fmt='--o' )
+
+
+    # labels = [j for j in range(1, 3)]
+    # print labels
+    # plt.boxplot([x for x in runtimeCON], 0 , '', labels=labels, boxprops=boxprops, whiskerprops=whiskerprops, capprops=capprops)
+    #plt.boxplot(runtimeEMR, 0 , '', labels=labels, boxprops=boxprops, whiskerprops=whiskerprops, capprops=capprops)
+    # plt.boxplot(runtimeCON, 0 , '', labels=labels, boxprops=boxprops, whiskerprops=whiskerprops, capprops=capprops)
+    #except ValueError:
+
+
+
+    # Figure scale
+
+    figure = plt.gcf()
+    figure.set_size_inches([10,6.5])
+
+    # Legend
+
+    # box = mpatches.Patch(color='blue', label='First to Third Quartiles', linewidth=3)
+    # av = mpatches.Patch(color='red', label='Median', linewidth=3)
+    # whisk = mpatches.Patch(color='black', label='Whiskers', linewidth=3)
+
+    # plt.legend(handles=[av, box, whisk], fontsize=16, frameon=True, loc=1)
+
+    plt.show()
+    pp.savefig()
+    plt.clf()
+    pp.close()
+
 
 def experiments_art(n, por, fr, uti, inputfile):
     # this is for artifical test (motivational example)
