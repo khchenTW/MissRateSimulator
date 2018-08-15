@@ -36,13 +36,13 @@ line = ['-','-','-','--','--','--','-.','-.','-.','-','-','-','-','-','-']
 hardTaskFactor = [1.83]
 
 # Setting for Fig4:
-# faultRate = [10**-4]
-# power = [4]
-# utilization = [70]
-
-# Setting for Fig5:
 faultRate = [10**-4]
 power = [4]
+utilization = [70]
+
+# Setting for Fig5:
+# faultRate = [10**-4]
+# power = [4]
 utilization = [75]
 
 # Setting for Fig6:
@@ -196,23 +196,33 @@ def experiments_sim(n, por, fr, uti, inputfile):
     SimRateList = []
     ExpectedMissRate = []
     ConMissRate = []
-    stampCON = []
-    stampEPST = []
+    runtimeEMR = []
+    runtimeCON = []
+    runtimeSIM = []
 
     tasksets = np.load(inputfile+'.npy')
     tasksets_amount = len(tasksets)
     pass_amount = 0
-    try:
-        filename = 'outputs/sim'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_Sim'
-        SIM = np.load(filename+'.npy')
-        filename = 'outputs/sim'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_EMR'
-        EMR = np.load(filename+'.npy')
-        filename = 'outputs/sim'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_CON'
-        CON = np.load(filename+'.npy')
-    except IOError:
-        Outputs = False
+    #try:
+    filename = 'outputs/sim'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_Sim'
+    SIM = np.load(filename+'.npy')
+    filename = 'outputs/simt'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_Sim'
+    runtimeSIM=np.load(filename+'.npy')
+    filename = 'outputs/sim'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_EMR'
+    EMR = np.load(filename+'.npy')
+    filename = 'outputs/simt'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_EMR'
+    runtimeEMR=np.load(filename+'.npy')
+    filename = 'outputs/sim'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_CON'
+    CON = np.load(filename+'.npy')
+    filename = 'outputs/simt'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_CON'
+    runtimeCON=np.load(filename+'.npy')
+    #except IOError:
+        #Outputs = False
 
     if Outputs is False:
+        runtimeEMR = []
+        runtimeCON = []
+        runtimeSIM = []
         for idx, tasks in enumerate(tasksets):
 
             if pass_amount == 20:
@@ -226,27 +236,51 @@ def experiments_sim(n, por, fr, uti, inputfile):
             # EPST + Theorem2
             # report the miss rate of the lowest priority task
 
+            t1 = time.clock()
             simulator.dispatcher(jobnum, fr)
             tmp = simulator.missRate(n-1)
+            diff = time.clock()-t1
+            print ("--- Simulation %s seconds ---" % diff)
+            runtimeSIM.append(diff)
+
+
             if tmp < 10**-5:
                 continue
             else:
                 pass_amount += 1
                 SimRateList.append(tmp)
                 print "Approximate the miss rate"
+
+                t1 = time.clock()
                 ExpectedMissRate.append(NewApproximation(n, fr, sumbound, n-1, tasks, 0))
+                diff = time.clock()-t1
+                print ("--- EMR %s seconds ---" % diff)
+                runtimeEMR.append(diff)
+                t1 = time.clock()
                 ConMissRate.append(NewApproximation(n, fr, sumbound, n-1, tasks, 1))
+                diff = time.clock()-t1
+                print ("--- CON %s seconds ---" % diff)
+                runtimeCON.append(diff)
 
 
         filename = 'outputs/sim'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_Sim'
         np.save(filename, SimRateList)
         SIM = np.load(filename+'.npy')
+        filename = 'outputs/simt'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_Sim'
+        np.save(filename, runtimeSIM)
+
         filename = 'outputs/sim'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_EMR'
         np.save(filename, ExpectedMissRate)
         EMR = np.load(filename+'.npy')
+        filename = 'outputs/simt'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_EMR'
+        np.save(filename, runtimeEMR)
+
         filename = 'outputs/sim'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_CON'
         np.save(filename, ConMissRate)
         CON = np.load(filename+'.npy')
+        filename = 'outputs/simt'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_CON'
+        np.save(filename, runtimeCON)
+
     print "Result for fr"+str(power[por])+"_uti"+str(uti)
     print "SimRateList:"
     print SIM
@@ -254,6 +288,14 @@ def experiments_sim(n, por, fr, uti, inputfile):
     print EMR
     print "ConMissRate:"
     print CON
+
+    print ("EMR Avg %s seconds" %(reduce(lambda y, z: y + z, runtimeEMR)/len(runtimeEMR)))
+    print runtimeEMR
+    print ("CON Avg %s seconds" %(reduce(lambda y, z: y + z, runtimeCON)/len(runtimeCON)))
+    print runtimeCON
+    print ("SIM Avg %s seconds" %(reduce(lambda y, z: y + z, runtimeSIM)/len(runtimeSIM)))
+    print runtimeSIM
+
 
     ind = np.arange(len(EMR))
     #prune for leq 20 sets
@@ -267,7 +309,7 @@ def experiments_sim(n, por, fr, uti, inputfile):
         ind = np.arange(20) # the x locations for the groups
 
     width = 0.15
-    title = 'Tasks: '+ repr(n) + ', $U^N_{SUM}$:'+repr(uti)+'%' + ', Fault Rate:'+repr(fr)
+    title = 'Tasks: '+ repr(n) + ', $U^N_{SUM}$: '+repr(uti)+'\%' + ', $P_i^A$: '+repr(fr)
     plt.title(title, fontsize=20)
     plt.grid(True)
     plt.ylabel('Expected Miss Rate', fontsize=20)
@@ -283,11 +325,11 @@ def experiments_sim(n, por, fr, uti, inputfile):
         rects1 = plt.bar(ind-0.1, SIM, width, color='black', edgecolor='black')
         rects2 = plt.bar(ind+0.1, CON, width, fill = False, edgecolor='black')
         rects3 = plt.bar(ind+0.3, EMR, width, edgecolor='black', hatch='/')
-        plt.legend((rects1[0], rects2[0], rects3[0]),('SIM', 'CON', 'EMR'))
+        plt.legend((rects1[0], rects2[0], rects3[0]),('SIM', 'CON', 'AB'))
     except ValueError:
         print "Value ERROR!!!!!!!!!!"
     figure = plt.gcf()
-    figure.set_size_inches([14.5,6.5])
+    figure.set_size_inches([14.5,6])
 
     #plt.show()
     pp.savefig()
@@ -323,25 +365,27 @@ def experiments_emr(n, por, fr, uti, inputfile ):
 def trendsOfPhiMI(n, por, fr, uti, inputfile):
 
     Outputs = True
-    filePrefix = 'trends'
     folder = 'figures/'
     # folder = '/home/khchen/Dropbox/'
-    pp = PdfPages(folder + "task" + repr(n) + "-" + filePrefix + '.pdf')
-    upperJ = 8
+    upperJ = 7
 
     tasksets = np.load(inputfile+'.npy')
     tasksets_amount = len(tasksets)
-    CResults = []
-    Results = []
-    xResults = []
+    EMRResults = []
+    CONResults = []
 
     runtimeEMR = []
     runtimeCON = []
     try:
         filename = 'outputs/trends'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_EMR'
         runtimeEMR = np.load(filename+'.npy')
+        filename = 'outputs/trendsR'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_EMR'
+        EMRResults = np.load(filename+'.npy')
+
         filename = 'outputs/trends'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_CON'
         runtimeCON = np.load(filename+'.npy')
+        filename = 'outputs/trendsR'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_CON'
+        CONResults = np.load(filename+'.npy')
     except IOError:
         Outputs = False
 
@@ -349,10 +393,13 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
     if Outputs is False:
         runtimeEMR = []
         runtimeCON = []
+        EMRResults = []
+        CONResults = []
         for x in range(1, upperJ):
-        # for x in range(1, 4):
             stampPHIEMR = []
             stampPHICON = []
+            probPHIEMR = []
+            probPHICON = []
             print x
             for tasks in tasksets:
                 t1 = time.clock()
@@ -362,10 +409,9 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
                 diff = t2-t1
                 print ("--- Chernoff %s seconds ---" % diff)
                 stampPHIEMR.append(diff)
+                probPHIEMR.append(r)
 
-                Results.append(r)
-                xResults.append(r*x)
-                if n >= 10 and x > upperJ-3:
+                if n >= 10 and x > upperJ-2:
                     continue
                 else:
                     probs = []
@@ -373,24 +419,28 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
                     pruned = []
                     t3 = time.clock()
                     prepareTable(n, fr, x, n-1, tasks, 1)
-                    # c = deadline_miss_probability.calculate_pruneCON(tasks, fr, probs, states, pruned, x)
                     c = wRoutine(x, 1)
                     t4 = time.clock()
                     diff = t4-t3
                     print ("--- CON %s seconds ---" % diff)
                     stampPHICON.append(diff)
-                    CResults.append(c)
+                    probPHICON.append(c)
             runtimeEMR.append(stampPHIEMR)
-            # reduce(lambda y, z: y + z, stampPHIEMR)/len(stampPHIEMR)
+            EMRResults.append(probPHIEMR)
             if len(stampPHICON) > 0:
                 runtimeCON.append(stampPHICON)
-                # reduce(lambda y, z: y + z, stampPHICON)/len(stampPHICON)
+                CONResults.append(probPHICON)
 
         filename = 'outputs/trends'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_EMR'
         np.save(filename, runtimeEMR)
+        filename = 'outputs/trendsR'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_EMR'
+        np.save(filename, EMRResults)
         filename = 'outputs/trends'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_CON'
         np.save(filename, runtimeCON)
+        filename = 'outputs/trendsR'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_CON'
+        np.save(filename, CONResults)
 
+    print "for runtime:"
     for x, timeS in enumerate(runtimeEMR):
         print ("EMR Avg %s seconds for index %s" %(reduce(lambda y, z: y + z, timeS)/len(timeS), x+1))
         print ("x:%s" % (x+1)) , timeS
@@ -398,21 +448,25 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
         print ("CON Avg %s seconds for index %s" %(reduce(lambda y, z: y + z, timeS)/len(timeS), x+1))
         print ("x:%s" % (x+1)) , timeS
 
+    print "for results:"
+    for x, resS in enumerate(EMRResults):
+        print ("EMR Avg %s prob for index %s" %(reduce(lambda y, z: y + z, resS)/len(resS), x+1))
+        print ("x:%s" % (x+1)) , resS
+    for x, resS in enumerate(CONResults):
+        print ("CON Avg %s prob for index %s" %(reduce(lambda y, z: y + z, resS)/len(resS), x+1))
+        print ("x:%s" % (x+1)) , resS
 
-    # # collect results
-    # xlistRes.append(xResults)
-    # ClistRes.append(CResults)
-    # listRes.append(Results)
-
+    filePrefix = 'trends'
+    pp = PdfPages(folder + "task" + repr(n) + "-" + filePrefix + '.pdf')
     # Label
-    title = 'Tasks:' + repr(n) + ', $U^N_{SUM}$:'+repr(uti)+'%'+', Fault Rate:'+repr(fr)
+    title = 'Tasks: '+ repr(n) + ', $U^N_{SUM}$: '+repr(uti)+'\%' + ', $P_i^A$: '+repr(fr)
 
-    #the blue box
-    boxprops = dict(linewidth=2, color='blue')
-    #the median line
-    medianprops = dict(linewidth=2.5, color='red')
-    whiskerprops = dict(linewidth=2.5, color='black')
-    capprops = dict(linewidth=2.5)
+    ##the blue box
+    #boxprops = dict(linewidth=2, color='blue')
+    ##the median line
+    #medianprops = dict(linewidth=2.5, color='red')
+    #whiskerprops = dict(linewidth=2.5, color='black')
+    #capprops = dict(linewidth=2.5)
 
     plt.title(title, fontsize=20)
     plt.grid(True)
@@ -430,11 +484,12 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
     #plt.violinplot([x for x in runtimeEMR], showmedians=True, showmeans=False)
     #plt.violinplot([x for x in runtimeCON], showmedians=True, showmeans=False)
 
-    plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR], '--o' )
+    rects1=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR], '--o' )
     if n == 10:
-        labels = [j for j in range(1, upperJ-2)]
+        labels = [j for j in range(1, upperJ-1)]
         print labels
-    plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON], '-.D' )
+    rects2=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON], '-.D' )
+    plt.legend((rects1[0], rects2[0]),('AB','CON'), prop={'size': 20})
 
     # print labels
     # plt.boxplot([x for x in runtimeCON], 0 , '', labels=labels, boxprops=boxprops, whiskerprops=whiskerprops, capprops=capprops)
@@ -457,7 +512,45 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
 
     # plt.legend(handles=[av, box, whisk], fontsize=16, frameon=True, loc=1)
 
-    plt.show()
+    #plt.show()
+    pp.savefig()
+    plt.clf()
+    pp.close()
+
+    """
+    For trends-prob
+    """
+
+    filePrefix = 'trends-prob'
+    pp = PdfPages(folder + "task" + repr(n) + "-" + filePrefix + '.pdf')
+    title = 'Tasks: '+ repr(n) + ', $U^N_{SUM}$: '+repr(uti)+'\%' + ', $P_i^A$: '+repr(fr)
+
+    plt.title(title, fontsize=20)
+    plt.grid(True)
+    plt.ylabel('Probability $\Phi_{k, j}$', fontsize=20)
+    plt.xlabel('Step j', fontsize=22)
+    plt.yscale("log")
+    # ax.set_ylim([10**-28,10**0])
+    print len(EMRResults)
+    print len(CONResults)
+
+    labels = [j for j in range(1, upperJ)]
+    print labels
+    plt.xticks(labels)
+
+    rects1=plt.plot(labels, [float(reduce(lambda y, z: y + z, resS)/len(resS)) for resS in EMRResults], '--o' )
+    if n == 10:
+        labels = [j for j in range(1, upperJ-1)]
+        print labels
+    rects2=plt.plot(labels, [float(reduce(lambda y, z: y + z, resS)/len(resS)) for resS in CONResults], '-.D' )
+    plt.legend((rects1[0], rects2[0]),('AB','CON'), prop={'size': 20})
+
+    # Figure scale
+
+    figure = plt.gcf()
+    figure.set_size_inches([10,6.5])
+
+
     pp.savefig()
     plt.clf()
     pp.close()
@@ -501,43 +594,270 @@ def experiments_art(n, por, fr, uti, inputfile):
     fo.write("\n")
     fo.close()
 
-'''
-def ploting_with_s(n, por, fr, uti, inputfile, delta, minS, maxS):
+def ploting_together():
     filePrefix = 'plots-'
     folder = 'figures/'
+    runtimeEMR5 = []
+    runtimeCON5 = []
+    EMRResults5 = []
+    CONResults5 = []
+    runtimeEMR10 = []
+    runtimeCON10 = []
+    EMRResults10 = []
+    CONResults10 = []
+    diffResults10 = []
+    diffResults5 = []
 
-    # assume the inputs are generated
-    tasksets = np.load(inputfile+'.npy')
-    for idx, tasks in enumerate(tasksets):
-        # if idx == 11:
-        pp = PdfPages(folder + filePrefix + repr(idx) +'.pdf')
-        results = []
-        for s in np.arange(minS, maxS, delta):
-            r = np.float128()
-            r = EPST.probabilisticTest_s(n-1, tasks, 1, Chernoff_bounds, s)
-            results.append(r)
-        title = 'Tasks: '+ repr(n) + ', $U^N_{SUM}$:'+repr(uti)+'%' + ', Fault Rate:'+repr(fr) + ', Delta:'+repr(delta)
+    try:
+        filename = 'outputs/backup/trends'+str(5)+'_'+str(70)+'_'+str(4)+'_'+str(10)+'_EMR'
+        runtimeEMR5 = np.load(filename+'.npy')
+        filename = 'outputs/backup/trendsR'+str(5)+'_'+str(70)+'_'+str(4)+'_'+str(10)+'_EMR'
+        EMRResults5 = np.load(filename+'.npy')
+
+        filename = 'outputs/backup/trends'+str(10)+'_'+str(70)+'_'+str(4)+'_'+str(5)+'_EMR'
+        runtimeEMR10 = np.load(filename+'.npy')
+        filename = 'outputs/backup/trendsR'+str(10)+'_'+str(70)+'_'+str(4)+'_'+str(5)+'_EMR'
+        EMRResults10 = np.load(filename+'.npy')
+
+        filename = 'outputs/backup/trends'+str(5)+'_'+str(70)+'_'+str(4)+'_'+str(10)+'_CON'
+        runtimeCON5 = np.load(filename+'.npy')
+        filename = 'outputs/backup/trendsR'+str(5)+'_'+str(70)+'_'+str(4)+'_'+str(10)+'_CON'
+        CONResults5 = np.load(filename+'.npy')
+
+        filename = 'outputs/backup/trends'+str(10)+'_'+str(70)+'_'+str(4)+'_'+str(5)+'_CON'
+        runtimeCON10 = np.load(filename+'.npy')
+        filename = 'outputs/backup/trendsR'+str(10)+'_'+str(70)+'_'+str(4)+'_'+str(5)+'_CON'
+        CONResults10 = np.load(filename+'.npy')
+
+        for EMRx, CONy in zip(EMRResults5, CONResults5):
+            diffResults5.append(
+                (reduce(lambda y, z: y + z, EMRx)/len(EMRx))/(reduce(lambda y, z: y + z, CONy)/len(CONy))
+            )
+
+
+        for EMRx, CONy in zip(EMRResults10, CONResults10):
+            diffResults10.append(
+               (reduce(lambda y, z: y + z, EMRx)/len(EMRx))/(reduce(lambda y, z: y + z, CONy)/len(CONy))
+            )
+
+
+
+        filePrefix = 'trends-together'
+        pp = PdfPages(folder + filePrefix + '.pdf')
+        # Label
+        title = '$U^N_{\small\mbox{SUM}}$: '+repr(70)+'\%' + ', $P_i^A$: '+repr(10**-4)
 
         plt.title(title, fontsize=20)
         plt.grid(True)
-        plt.ylabel('Expected Miss Rate', fontsize=20)
-        plt.xlabel('Real number s', fontsize=22)
-        plt.yscale("log")
-        # ax.set_ylim([10**-28,10**0])
-        #ax.tick_params(axis='both', which='major',labelsize=20)
-        # labels = ('$10^{-2}$','$10^{-4}$', '$10^{-6}$')
-        plt.plot(np.arange(minS, maxS, delta), results, 'ro')
-        figure = plt.gcf()
-        figure.set_size_inches([10,6.5])
+        plt.ylabel('Analysis Runtime (seconds)', fontsize=20)
+        plt.xlabel('Step j for $\Phi_{k, j}$', fontsize=22)
+        # plt.yscale("log")
+        plt.ylim([0,6000])
+        plt.xlim([0.5,6.5])
 
-        # plt.legend(handles=[av, box, whisk], fontsize=16, frameon=True, loc=1)
+        labels = [j for j in range(1, 7)]
+        plt.xticks(labels)
+
+
+        rects1=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR5], '--o' )
+        rects2=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON5], '-.D' )
+        rects3=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR10], '--p' )
+        labels = [j for j in range(1, 6)]
+        rects4=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON10], '-.*' )
+        plt.legend((rects1[0], rects2[0], rects3[0], rects4[0]),('AB-task5','CON-task5','AB-task10','CON-task10'), prop={'size': 20}, loc=2)
+
+        # Figure scale
+
+        figure = plt.gcf()
+        figure.set_size_inches([10,5.5])
 
         #plt.show()
         pp.savefig()
         plt.clf()
         pp.close()
-'''
 
+        # blank figure
+        pp = PdfPages(folder + "trends-blank" + '.pdf')
+        title = '$U^N_{\small\mbox{SUM}}$: '+repr(70)+'\%' + ', $P_i^A$: '+repr(10**-4)
+
+        plt.title(title, fontsize=20)
+        plt.grid(True)
+        plt.ylabel('Analysis Runtime (seconds)', fontsize=20)
+        plt.xlabel('Step j for $\Phi_{k, j}$', fontsize=22)
+        plt.ylim([0,6000])
+        plt.xlim([0.5,6.5])
+        # plt.yscale("log")
+        # ax.set_ylim([10**-28,10**0])
+
+        labels = [j for j in range(1, 7)]
+        plt.xticks(labels)
+        figure = plt.gcf()
+        figure.set_size_inches([10,5.5])
+
+        pp.savefig()
+        plt.clf()
+        pp.close()
+
+
+        filePrefix = 'trends-together-only5'
+        pp = PdfPages(folder + filePrefix + '.pdf')
+        # Label
+        title = '$U^N_{\small\mbox{SUM}}$: '+repr(70)+'\%' + ', $P_i^A$: '+repr(10**-4)
+
+        plt.title(title, fontsize=20)
+        plt.grid(True)
+        plt.ylabel('Analysis Runtime (seconds)', fontsize=20)
+        plt.xlabel('Step j for $\Phi_{k, j}$', fontsize=22)
+        plt.ylim([0,6000])
+        plt.xlim([0.5,6.5])
+        # plt.yscale("log")
+        # ax.set_ylim([10**-28,10**0])
+
+        labels = [j for j in range(1, 7)]
+        plt.xticks(labels)
+
+        rects1=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR5], '--o' )
+        rects2=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON5], '-.D' )
+        plt.legend((rects1[0], rects2[0]),('AB-task5','CON-task5'), prop={'size': 20}, loc=2)
+
+        # Figure scale
+
+        figure = plt.gcf()
+        figure.set_size_inches([10,5.5])
+
+        #plt.show()
+        pp.savefig()
+        plt.clf()
+        pp.close()
+
+        '''TrendsR together'''
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        fig.subplots_adjust(top=0.9,left=0.1,right=0.95,hspace =0.15)
+        ax.spines['top'].set_color('none')
+        ax.spines['bottom'].set_color('none')
+        ax.spines['left'].set_color('none')
+        ax.spines['right'].set_color('none')
+        ax.tick_params(labelcolor='w', top=False, bottom=False, left=False, right=False)
+
+
+        filePrefix = 'trendsR-together'
+        pp = PdfPages(folder + filePrefix + '.pdf')
+        title = '$U^N_{\small\mbox{SUM}}$: '+repr(70)+'\%' + ', $P_i^A$: '+repr(10**-4)
+        plt.title(title, fontsize=20)
+        for i in range(1, 3):
+            ax = fig.add_subplot(2,1,i)
+            if i == 1:
+                ax.set_ylabel('Analysis Runtime (seconds)', fontsize=15)
+                # ax.set_xlabel('Step j for $\Phi_{k, j}$', fontsize=15)
+                ax.set_ylim([0,6000])
+                ax.set_xlim([0.5,6.5])
+
+                labels = [j for j in range(1, 7)]
+                # ax.set_xticks(labels)
+
+                rects1=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR5], '--o' )
+                rects2=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON5], '-.D' )
+                rects3=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR10], '--p' )
+                labels = [j for j in range(1, 6)]
+                rects4=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON10], '-.*' )
+                ax.legend((rects1[0], rects2[0], rects3[0], rects4[0]),('AB-task5','CON-task5','AB-task10','CON-task10'), prop={'size': 15}, loc=2)
+                ax.grid()
+            else:
+
+                # Label
+                ax.set_ylabel('$\Delta = \Phi_{k,j}^{\mbox{AB}} / \Phi_{k,j}^{\mbox{CON}}$', fontsize=15)
+                ax.set_xlabel('Step j for $\Phi_{k, j}$', fontsize=20)
+                ax.set_yscale("log")
+                ax.set_ylim([10**0, 10**10])
+                ax.set_xlim([0.5,6.5])
+
+                labels = [j for j in range(1, 7)]
+                ax.set_xticks(labels)
+
+
+                rects1=ax.plot(labels, diffResults5, '--o' )
+                labels = [j for j in range(1, 6)]
+                rects2=ax.plot(labels, diffResults10, '-.D' )
+                ax.legend((rects1[0], rects2[0]),('Diff-task5','Diff-task10'), prop={'size': 15}, loc=2)
+
+                ax.grid()
+
+        #plt.show()
+        figure = plt.gcf()
+        figure.set_size_inches([10,5.5])
+        pp.savefig()
+        plt.clf()
+        pp.close()
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        fig.subplots_adjust(top=0.9,left=0.1,right=0.95,hspace =0.15)
+        ax.spines['top'].set_color('none')
+        ax.spines['bottom'].set_color('none')
+        ax.spines['left'].set_color('none')
+        ax.spines['right'].set_color('none')
+        ax.tick_params(labelcolor='w', top=False, bottom=False, left=False, right=False)
+
+
+        filePrefix = 'trendsR-blank'
+        pp = PdfPages(folder + filePrefix + '.pdf')
+        title = '$U^N_{\small\mbox{SUM}}$: '+repr(70)+'\%' + ', $P_i^A$: '+repr(10**-4)
+        plt.title(title, fontsize=20)
+        for i in range(1, 3):
+            ax = fig.add_subplot(2,1,i)
+            if i == 1:
+                ax.set_ylabel('Analysis Runtime (seconds)', fontsize=15)
+                # ax.set_xlabel('Step j for $\Phi_{k, j}$', fontsize=15)
+                ax.set_ylim([0,6000])
+                ax.set_xlim([0.5,6.5])
+
+                labels = [j for j in range(1, 7)]
+                # ax.set_xticks(labels)
+
+
+                rects1=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR5], '--o' )
+                rects2=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON5], '-.D' )
+                rects3=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR10], '--p' )
+                labels = [j for j in range(1, 6)]
+                rects4=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON10], '-.*' )
+                ax.legend((rects1[0], rects2[0], rects3[0], rects4[0]),('AB-task5','CON-task5','AB-task10','CON-task10'), prop={'size': 15}, loc=2)
+
+                # Figure scale
+
+                # figure = ax.gcf()
+                # figure.set_size_inches([10,5.5])
+
+                ax.grid()
+            else:
+
+                # Label
+                ax.set_ylabel('$\Delta = \Phi_{k,j}^{\mbox{AB}} / \Phi_{k,j}^{\mbox{CON}}$', fontsize=15)
+                ax.set_xlabel('Step j for $\Phi_{k, j}$', fontsize=20)
+                ax.set_yscale("log")
+                ax.set_ylim([10**0, 10**10])
+                ax.set_xlim([0.5,6.5])
+
+                labels = [j for j in range(1, 7)]
+                ax.set_xticks(labels)
+
+
+                # rects1=ax.plot(labels, diffResults5, '--o' )
+                # labels = [j for j in range(1, 5)]
+                # rects2=ax.plot(labels, diffResults10, '-.D' )
+                # ax.legend((rects1[0], rects2[0]),('Diff-task5','Diff-task10'), prop={'size': 15}, loc=2)
+
+                ax.grid()
+
+        #plt.show()
+        figure = plt.gcf()
+        figure.set_size_inches([10,5.5])
+        pp.savefig()
+        plt.clf()
+        pp.close()
+
+    except IOError:
+        print "Inputs have error"
 
 def main():
     args = sys.argv
@@ -571,9 +891,9 @@ def main():
             elif mode == 4:
                 # used to present the example illustrating the differences between the miss rate and the probability of deadline misses.
                 experiments_art(n, por, fr, uti, filename)
-            # elif mode == 5:
-            #     # used to print out a continuous curve of results with different real value s
-            #     ploting_with_s(n, por, fr, uti, filename, 1, 0, 100)
+            elif mode == 5:
+                # used to print out the figure presented in the slides
+                ploting_together()
             else:
                 raise NotImplementedError("Error: you use a mode without implementation")
 
