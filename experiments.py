@@ -36,14 +36,14 @@ line = ['-','-','-','--','--','--','-.','-.','-.','-','-','-','-','-','-']
 hardTaskFactor = [1.83]
 
 # Setting for Fig4:
-faultRate = [10**-4]
-power = [4]
-utilization = [70]
+# faultRate = [10**-4]
+# power = [4]
+# utilization = [70]
 
 # Setting for Fig5:
-#faultRate = [10**-4]
-#power = [4]
-#utilization = [75]
+faultRate = [10**-4]
+power = [4]
+utilization = [75]
 
 # Setting for Fig6:
 # faultRate = [10**-2, 10**-4, 10**-6]
@@ -59,8 +59,8 @@ sumbound = 4
 # for the motivational example
 #jobnum = 5000000
 # for the evalutions
-#jobnum = 2000000
-jobnum = 2
+jobnum = 2000000
+#jobnum = 2
 lookupTable = []
 conlookupTable = []
 
@@ -191,6 +191,7 @@ def experiments_sim(n, por, fr, uti, inputfile):
     Outputs = True
     filePrefix = 'sim'
     folder = 'figures/'
+    # folder = '/home/khchen/Dropbox/'
     pp = PdfPages(folder + "task" + repr(n) + "-" + filePrefix + '.pdf')
     SimRateList = []
     ExpectedMissRate = []
@@ -202,11 +203,11 @@ def experiments_sim(n, por, fr, uti, inputfile):
     tasksets_amount = len(tasksets)
     pass_amount = 0
     try:
-        filename = 'outputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_Sim'
+        filename = 'outputs/sim'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_Sim'
         SIM = np.load(filename+'.npy')
-        filename = 'outputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_EMR'
+        filename = 'outputs/sim'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_EMR'
         EMR = np.load(filename+'.npy')
-        filename = 'outputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_CON'
+        filename = 'outputs/sim'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_CON'
         CON = np.load(filename+'.npy')
     except IOError:
         Outputs = False
@@ -225,26 +226,25 @@ def experiments_sim(n, por, fr, uti, inputfile):
             # EPST + Theorem2
             # report the miss rate of the lowest priority task
 
-
-            print "Approximate the miss rate"
-            tmp = NewApproximation(n, fr, sumbound, n-1, tasks, 0)
-            if tmp < 10**-4:
+            simulator.dispatcher(jobnum, fr)
+            tmp = simulator.missRate(n-1)
+            if tmp < 10**-5:
                 continue
             else:
                 pass_amount += 1
-                ExpectedMissRate.append(tmp)
+                SimRateList.append(tmp)
+                print "Approximate the miss rate"
+                ExpectedMissRate.append(NewApproximation(n, fr, sumbound, n-1, tasks, 0))
                 ConMissRate.append(NewApproximation(n, fr, sumbound, n-1, tasks, 1))
 
-            simulator.dispatcher(jobnum, fr)
-            SimRateList.append(simulator.missRate(n-1))
 
-        filename = 'outputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_Sim'
+        filename = 'outputs/sim'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_Sim'
         np.save(filename, SimRateList)
         SIM = np.load(filename+'.npy')
-        filename = 'outputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_EMR'
+        filename = 'outputs/sim'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_EMR'
         np.save(filename, ExpectedMissRate)
         EMR = np.load(filename+'.npy')
-        filename = 'outputs/'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_CON'
+        filename = 'outputs/sim'+str(n)+'_'+str(uti)+'_'+str(power[por])+'_'+str(tasksets_amount)+'_CON'
         np.save(filename, ConMissRate)
         CON = np.load(filename+'.npy')
     print "Result for fr"+str(power[por])+"_uti"+str(uti)
@@ -255,24 +255,6 @@ def experiments_sim(n, por, fr, uti, inputfile):
     print "ConMissRate:"
     print CON
 
-
-    '''
-    ofile = "txt/COMPARISON_task"+str(n)+"_fr"+str(power[por])+"_uti"+str(uti)+".txt"
-    fo = open(ofile, "wb")
-    fo.write("SimRateList:")
-    fo.write("\n")
-    fo.write(str(SimRateList))
-    fo.write("\n")
-    fo.write("ConMissRate:")
-    fo.write("\n")
-    fo.write(str(ConMissRate))
-    fo.write("\n")
-    fo.write("ExpectedMissRate:")
-    fo.write("\n")
-    fo.write(str(ExpectedMissRate))
-    fo.write("\n")
-    fo.close()
-    '''
     ind = np.arange(len(EMR))
     #prune for leq 20 sets
     print "Num of SIM:",len(SIM)
@@ -306,8 +288,6 @@ def experiments_sim(n, por, fr, uti, inputfile):
         print "Value ERROR!!!!!!!!!!"
     figure = plt.gcf()
     figure.set_size_inches([14.5,6.5])
-
-    # plt.legend(handles=[av, box, whisk], fontsize=16, frameon=True, loc=1)
 
     #plt.show()
     pp.savefig()
@@ -345,9 +325,9 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
     Outputs = True
     filePrefix = 'trends'
     folder = 'figures/'
+    # folder = '/home/khchen/Dropbox/'
     pp = PdfPages(folder + "task" + repr(n) + "-" + filePrefix + '.pdf')
-    #upperJ = 11
-    upperJ = 4
+    upperJ = 8
 
     tasksets = np.load(inputfile+'.npy')
     tasksets_amount = len(tasksets)
@@ -385,8 +365,9 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
 
                 Results.append(r)
                 xResults.append(r*x)
-                #if x < upperJ-3:
-                if x < 3:
+                if n >= 10 and x > upperJ-3:
+                    continue
+                else:
                     probs = []
                     states = []
                     pruned = []
@@ -424,7 +405,7 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
     # listRes.append(Results)
 
     # Label
-    title = 'Tasks:' + repr(n) + ', $U^N_{SUM}$:'+repr(uti)+'%'
+    title = 'Tasks:' + repr(n) + ', $U^N_{SUM}$:'+repr(uti)+'%'+', Fault Rate:'+repr(fr)
 
     #the blue box
     boxprops = dict(linewidth=2, color='blue')
@@ -449,10 +430,12 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
     #plt.violinplot([x for x in runtimeEMR], showmedians=True, showmeans=False)
     #plt.violinplot([x for x in runtimeCON], showmedians=True, showmeans=False)
 
-    #plt.errorbar(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR], yerr=1, fmt='--o' )
+    plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR], '--o' )
+    if n == 10:
+        labels = [j for j in range(1, upperJ-2)]
+        print labels
+    plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON], '-.D' )
 
-
-    # labels = [j for j in range(1, 3)]
     # print labels
     # plt.boxplot([x for x in runtimeCON], 0 , '', labels=labels, boxprops=boxprops, whiskerprops=whiskerprops, capprops=capprops)
     #plt.boxplot(runtimeEMR, 0 , '', labels=labels, boxprops=boxprops, whiskerprops=whiskerprops, capprops=capprops)
@@ -482,6 +465,7 @@ def trendsOfPhiMI(n, por, fr, uti, inputfile):
 
 def experiments_art(n, por, fr, uti, inputfile):
     # this is for artifical test (motivational example)
+    jobnum = 5000000
     SimRateList = []
     tasksets = []
     sets = 20
