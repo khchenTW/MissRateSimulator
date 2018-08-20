@@ -18,6 +18,8 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib import rcParams
+
+rcParams.update({'font.size': 15})
 rcParams['font.family'] = 'sans-serif'
 rcParams['font.sans-serif'] = ['Tahoma']
 
@@ -56,11 +58,6 @@ utilization = [75]
 #utilization = [60]
 
 sumbound = 4
-# for the motivational example
-#jobnum = 5000000
-# for the evalutions
-jobnum = 2000000
-#jobnum = 2
 lookupTable = []
 conlookupTable = []
 
@@ -188,10 +185,11 @@ def prepareTable(n, fr, J, k, tasks, mode=0):
 
 def experiments_sim(n, por, fr, uti, inputfile):
 
+    jobnum = 2000000
     Outputs = True
     filePrefix = 'sim'
     folder = 'figures/'
-    # folder = '/home/khchen/Dropbox/'
+    folder = '/home/khchen/Dropbox/'
     pp = PdfPages(folder + "task" + repr(n) + "-" + filePrefix + '.pdf')
     SimRateList = []
     ExpectedMissRate = []
@@ -325,7 +323,7 @@ def experiments_sim(n, por, fr, uti, inputfile):
         rects1 = plt.bar(ind-0.1, SIM, width, color='black', edgecolor='black')
         rects2 = plt.bar(ind+0.1, CON, width, fill = False, edgecolor='black')
         rects3 = plt.bar(ind+0.3, EMR, width, edgecolor='black', hatch='/')
-        plt.legend((rects1[0], rects2[0], rects3[0]),('SIM', 'CON', 'AB'))
+        plt.legend((rects1[0], rects2[0], rects3[0]),('SIM', 'CON', 'AB'), ncol=3, loc=9, bbox_to_anchor=(0.5, 1), prop={'size':20})
     except ValueError:
         print "Value ERROR!!!!!!!!!!"
     figure = plt.gcf()
@@ -561,9 +559,9 @@ def experiments_art(n, por, fr, uti, inputfile):
     jobnum = 5000000
     SimRateList = []
     tasksets = []
-    sets = 20
+    sets = 100
 
-
+    n = 2
     tasks = []
     tasks.append({'period': 3, 'abnormal_exe': 2, 'deadline': 3, 'execution': 2, 'prob': 0})
     tasks.append({'period': 5, 'abnormal_exe': 2.25, 'deadline': 5, 'execution': 1, 'prob': 5e-01})
@@ -571,32 +569,37 @@ def experiments_art(n, por, fr, uti, inputfile):
     for x in range(sets):
         tasksets.append(tasks)
 
-    for tasks in tasksets:
+    for ind, tasks in enumerate(tasksets):
 
         simulator=MissRateSimulator(n, tasks)
         simulator.dispatcher(jobnum, 0.5)
         SimRateList.append(simulator.missRate(n-1))
+        print ind, simulator.missRate(n-1)
 
     print "Result for fr"+str(power[por])+"_uti"+str(uti)
     print "SimRateList:"
     print SimRateList
+    print "AVG: ", reduce(lambda x, y: x+y, SimRateList) / len(SimRateList)
+    print "MAX: ", max(SimRateList)
+    maxResult = max(SimRateList)
+    AVGResult = max(SimRateList)
 
 
-    ofile = "txt/ARTresults_task"+str(n)+"_fr"+str(power[por])+"_runs"+str(sets)+".txt"
+    ofile = "txt/ART_task"+str(n)+".txt"
     fo = open(ofile, "wb")
-    fo.write("SimRateList:")
+    fo.write("Simulation Miss Rate:")
     fo.write("\n")
-    fo.write("[")
-    for item in SimRateList:
-        fo.write(str(item))
-        fo.write(",")
-    fo.write("]")
+    fo.write(str(SimRateList))
+    fo.write(AVGResult)
+    fo.write(maxResult)
     fo.write("\n")
     fo.close()
 
+
 def ploting_together():
     filePrefix = 'plots-'
-    folder = 'figures/'
+    #folder = 'figures/'
+    folder = '/home/khchen/Dropbox/'
     runtimeEMR5 = []
     runtimeCON5 = []
     EMRResults5 = []
@@ -649,21 +652,21 @@ def ploting_together():
 
         plt.title(title, fontsize=20)
         plt.grid(True)
-        plt.ylabel('Analysis Runtime (seconds)', fontsize=20)
+        plt.ylabel('Average Analysis Runtime (seconds)', fontsize=20)
         plt.xlabel('Step j for $\Phi_{k, j}$', fontsize=22)
         # plt.yscale("log")
-        plt.ylim([0,6000])
+        plt.ylim([-300,6000])
         plt.xlim([0.5,6.5])
 
         labels = [j for j in range(1, 7)]
         plt.xticks(labels)
 
 
-        rects1=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR5], '--o' )
-        rects2=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON5], '-.D' )
-        rects3=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR10], '--p' )
+        rects1=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR5], '--o', ms=7 )
+        rects2=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON5], '-.D', ms=7 )
+        rects3=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR10], '--p', ms=7 )
         labels = [j for j in range(1, 6)]
-        rects4=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON10], '-.*' )
+        rects4=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON10], '-.v', ms=7 )
         plt.legend((rects1[0], rects2[0], rects3[0], rects4[0]),('AB-task5','CON-task5','AB-task10','CON-task10'), prop={'size': 20}, loc=2)
 
         # Figure scale
@@ -682,9 +685,9 @@ def ploting_together():
 
         plt.title(title, fontsize=20)
         plt.grid(True)
-        plt.ylabel('Analysis Runtime (seconds)', fontsize=20)
+        plt.ylabel('Average Analysis Runtime (seconds)', fontsize=20)
         plt.xlabel('Step j for $\Phi_{k, j}$', fontsize=22)
-        plt.ylim([0,6000])
+        plt.ylim([-300,6000])
         plt.xlim([0.5,6.5])
         # plt.yscale("log")
         # ax.set_ylim([10**-28,10**0])
@@ -706,9 +709,9 @@ def ploting_together():
 
         plt.title(title, fontsize=20)
         plt.grid(True)
-        plt.ylabel('Analysis Runtime (seconds)', fontsize=20)
+        plt.ylabel('Average Analysis Runtime (seconds)', fontsize=20)
         plt.xlabel('Step j for $\Phi_{k, j}$', fontsize=22)
-        plt.ylim([0,6000])
+        plt.ylim([-300,6000])
         plt.xlim([0.5,6.5])
         # plt.yscale("log")
         # ax.set_ylim([10**-28,10**0])
@@ -716,8 +719,8 @@ def ploting_together():
         labels = [j for j in range(1, 7)]
         plt.xticks(labels)
 
-        rects1=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR5], '--o' )
-        rects2=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON5], '-.D' )
+        rects1=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR5], '--o', ms=7)
+        rects2=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON5], '-.D', ms=7)
         plt.legend((rects1[0], rects2[0]),('AB-task5','CON-task5'), prop={'size': 20}, loc=2)
 
         # Figure scale
@@ -748,19 +751,19 @@ def ploting_together():
         for i in range(1, 3):
             ax = fig.add_subplot(2,1,i)
             if i == 1:
-                ax.set_ylabel('Analysis Runtime (seconds)', fontsize=15)
+                ax.set_ylabel('Avg Analysis Runtime (seconds)', fontsize=15)
                 # ax.set_xlabel('Step j for $\Phi_{k, j}$', fontsize=15)
-                ax.set_ylim([0,6000])
+                ax.set_ylim([-300,6000])
                 ax.set_xlim([0.5,6.5])
 
                 labels = [j for j in range(1, 7)]
                 # ax.set_xticks(labels)
 
-                rects1=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR5], '--o' )
-                rects2=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON5], '-.D' )
-                rects3=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR10], '--p' )
+                rects1=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR5], '--o' , ms=7)
+                rects2=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON5], '-.D' , ms=7)
+                rects3=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR10], '--p', ms=7)
                 labels = [j for j in range(1, 6)]
-                rects4=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON10], '-.*' )
+                rects4=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON10], '-.v', ms=7)
                 ax.legend((rects1[0], rects2[0], rects3[0], rects4[0]),('AB-task5','CON-task5','AB-task10','CON-task10'), prop={'size': 15}, loc=2)
                 ax.grid()
             else:
@@ -776,9 +779,9 @@ def ploting_together():
                 ax.set_xticks(labels)
 
 
-                rects1=ax.plot(labels, diffResults5, '--o' )
+                rects1=ax.plot(labels, diffResults5, '--o', ms=7)
                 labels = [j for j in range(1, 6)]
-                rects2=ax.plot(labels, diffResults10, '-.D' )
+                rects2=ax.plot(labels, diffResults10, '-.D', ms=7 )
                 ax.legend((rects1[0], rects2[0]),('Diff-task5','Diff-task10'), prop={'size': 15}, loc=2)
 
                 ax.grid()
@@ -807,20 +810,20 @@ def ploting_together():
         for i in range(1, 3):
             ax = fig.add_subplot(2,1,i)
             if i == 1:
-                ax.set_ylabel('Analysis Runtime (seconds)', fontsize=15)
+                ax.set_ylabel('Avg Analysis Runtime (seconds)', fontsize=15)
                 # ax.set_xlabel('Step j for $\Phi_{k, j}$', fontsize=15)
-                ax.set_ylim([0,6000])
+                ax.set_ylim([-300,6000])
                 ax.set_xlim([0.5,6.5])
 
                 labels = [j for j in range(1, 7)]
                 # ax.set_xticks(labels)
 
 
-                rects1=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR5], '--o' )
-                rects2=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON5], '-.D' )
-                rects3=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR10], '--p' )
+                rects1=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR5], '--o' , ms=7)
+                rects2=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON5], '-.D' , ms=7)
+                rects3=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR10], '--p', ms=7)
                 labels = [j for j in range(1, 6)]
-                rects4=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON10], '-.*' )
+                rects4=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON10], '-.v', ms=7)
                 ax.legend((rects1[0], rects2[0], rects3[0], rects4[0]),('AB-task5','CON-task5','AB-task10','CON-task10'), prop={'size': 15}, loc=2)
 
                 # Figure scale
