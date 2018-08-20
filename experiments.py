@@ -320,9 +320,9 @@ def experiments_sim(n, por, fr, uti, inputfile):
     plt.tick_params(axis='both', which='major',labelsize=18)
     print ind
     try:
-        rects1 = plt.bar(ind-0.1, SIM, width, color='black', edgecolor='black')
-        rects2 = plt.bar(ind+0.1, CON, width, fill = False, edgecolor='black')
-        rects3 = plt.bar(ind+0.3, EMR, width, edgecolor='black', hatch='/')
+        rects1 = plt.bar(ind-0.1, SIM, width, edgecolor='black')
+        rects2 = plt.bar(ind+0.1, CON, width, edgecolor='black')
+        rects3 = plt.bar(ind+0.3, EMR, width, fill=False, edgecolor='black', hatch='/')
         plt.legend((rects1[0], rects2[0], rects3[0]),('SIM', 'CON', 'AB'), ncol=3, loc=9, bbox_to_anchor=(0.5, 1), prop={'size':20})
     except ValueError:
         print "Value ERROR!!!!!!!!!!"
