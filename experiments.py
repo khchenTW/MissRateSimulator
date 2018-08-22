@@ -189,7 +189,6 @@ def experiments_sim(n, por, fr, uti, inputfile):
     Outputs = True
     filePrefix = 'sim'
     folder = 'figures/'
-    folder = '/home/khchen/Dropbox/'
     pp = PdfPages(folder + "task" + repr(n) + "-" + filePrefix + '.pdf')
     SimRateList = []
     ExpectedMissRate = []
@@ -322,7 +321,7 @@ def experiments_sim(n, por, fr, uti, inputfile):
     try:
         rects1 = plt.bar(ind-0.1, SIM, width, edgecolor='black')
         rects2 = plt.bar(ind+0.1, CON, width, edgecolor='black')
-        rects3 = plt.bar(ind+0.3, EMR, width, fill=False, edgecolor='black', hatch='/')
+        rects3 = plt.bar(ind+0.3, EMR, width, edgecolor='black')
         plt.legend((rects1[0], rects2[0], rects3[0]),('SIM', 'CON', 'AB'), ncol=3, loc=9, bbox_to_anchor=(0.5, 1), prop={'size':20})
     except ValueError:
         print "Value ERROR!!!!!!!!!!"
@@ -598,8 +597,7 @@ def experiments_art(n, por, fr, uti, inputfile):
 
 def ploting_together():
     filePrefix = 'plots-'
-    #folder = 'figures/'
-    folder = '/home/khchen/Dropbox/'
+    folder = 'figures/'
     runtimeEMR5 = []
     runtimeCON5 = []
     EMRResults5 = []
@@ -751,7 +749,7 @@ def ploting_together():
         for i in range(1, 3):
             ax = fig.add_subplot(2,1,i)
             if i == 1:
-                ax.set_ylabel('Avg Analysis Runtime (seconds)', fontsize=15)
+                ax.set_ylabel('Avg Analysis Runtime (sec)', fontsize=15)
                 # ax.set_xlabel('Step j for $\Phi_{k, j}$', fontsize=15)
                 ax.set_ylim([-300,6000])
                 ax.set_xlim([0.5,6.5])
@@ -810,7 +808,7 @@ def ploting_together():
         for i in range(1, 3):
             ax = fig.add_subplot(2,1,i)
             if i == 1:
-                ax.set_ylabel('Avg Analysis Runtime (seconds)', fontsize=15)
+                ax.set_ylabel('Avg Analysis Runtime (sec)', fontsize=15)
                 # ax.set_xlabel('Step j for $\Phi_{k, j}$', fontsize=15)
                 ax.set_ylim([-300,6000])
                 ax.set_xlim([0.5,6.5])
