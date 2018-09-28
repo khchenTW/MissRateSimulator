@@ -306,7 +306,7 @@ def experiments_sim(n, por, fr, uti, inputfile):
         ind = np.arange(20) # the x locations for the groups
 
     width = 0.15
-    title = 'Tasks: '+ repr(n) + ', $U^N_{SUM}$: '+repr(uti)+'\%' + ', $P_i^A$: '+repr(fr)
+    title = 'Task Cardinality: '+ repr(n) + ', $U^N_{SUM}$: '+repr(uti)+'\%' + ', $P_i^A$: '+repr(fr)
     plt.title(title, fontsize=20)
     plt.grid(True)
     plt.ylabel('Expected Miss Rate', fontsize=20)
@@ -322,7 +322,7 @@ def experiments_sim(n, por, fr, uti, inputfile):
         rects1 = plt.bar(ind-0.1, SIM, width, edgecolor='black')
         rects2 = plt.bar(ind+0.1, CON, width, edgecolor='black')
         rects3 = plt.bar(ind+0.3, EMR, width, edgecolor='black')
-        plt.legend((rects1[0], rects2[0], rects3[0]),('SIM', 'CON', 'AB'), ncol=3, loc=9, bbox_to_anchor=(0.5, 1), prop={'size':20})
+        plt.legend((rects1[0], rects2[0], rects3[0]),('SIM', 'CON', 'Chernoff'), ncol=3, loc=9, bbox_to_anchor=(0.5, 1), prop={'size':20})
     except ValueError:
         print "Value ERROR!!!!!!!!!!"
     figure = plt.gcf()
@@ -665,7 +665,7 @@ def ploting_together():
         rects3=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR10], '--p', ms=7 )
         labels = [j for j in range(1, 6)]
         rects4=plt.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON10], '-.v', ms=7 )
-        plt.legend((rects1[0], rects2[0], rects3[0], rects4[0]),('AB-task5','CON-task5','AB-task10','CON-task10'), prop={'size': 20}, loc=2)
+        plt.legend((rects1[0], rects2[0], rects3[0], rects4[0]),('Chernoff-task5','CON-task5','Chernoff-task10','CON-task10'), prop={'size': 20}, loc=2)
 
         # Figure scale
 
@@ -762,12 +762,12 @@ def ploting_together():
                 rects3=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeEMR10], '--p', ms=7)
                 labels = [j for j in range(1, 6)]
                 rects4=ax.plot(labels, [float(reduce(lambda y, z: y + z, timeS)/len(timeS)) for timeS in runtimeCON10], '-.v', ms=7)
-                ax.legend((rects1[0], rects2[0], rects3[0], rects4[0]),('AB-task5','CON-task5','AB-task10','CON-task10'), prop={'size': 15}, loc=2)
+                ax.legend((rects1[0], rects2[0], rects3[0], rects4[0]),('Chernoff-task5','CON-task5','Chernoff-task10','CON-task10'), prop={'size': 15}, loc=2)
                 ax.grid()
             else:
 
                 # Label
-                ax.set_ylabel('$\Delta = \Phi_{k,j}^{\mbox{AB}} / \Phi_{k,j}^{\mbox{CON}}$', fontsize=15)
+                ax.set_ylabel('$\Delta = \Phi_{k,j}^{\mbox{Chernoff}} / \Phi_{k,j}^{\mbox{CON}}$', fontsize=15)
                 ax.set_xlabel('Step j for $\Phi_{k, j}$', fontsize=20)
                 ax.set_yscale("log")
                 ax.set_ylim([10**0, 10**10])
@@ -833,7 +833,7 @@ def ploting_together():
             else:
 
                 # Label
-                ax.set_ylabel('$\Delta = \Phi_{k,j}^{\mbox{AB}} / \Phi_{k,j}^{\mbox{CON}}$', fontsize=15)
+                ax.set_ylabel('$\Delta = \Phi_{k,j}^{\mbox{Chernoff}} / \Phi_{k,j}^{\mbox{CON}}$', fontsize=15)
                 ax.set_xlabel('Step j for $\Phi_{k, j}$', fontsize=20)
                 ax.set_yscale("log")
                 ax.set_ylim([10**0, 10**10])
@@ -843,12 +843,57 @@ def ploting_together():
                 ax.set_xticks(labels)
 
 
-                # rects1=ax.plot(labels, diffResults5, '--o' )
-                # labels = [j for j in range(1, 5)]
-                # rects2=ax.plot(labels, diffResults10, '-.D' )
-                # ax.legend((rects1[0], rects2[0]),('Diff-task5','Diff-task10'), prop={'size': 15}, loc=2)
+                rects1=ax.plot(labels, diffResults5, '--o', ms=7)
+                labels = [j for j in range(1, 6)]
+                rects2=ax.plot(labels, diffResults10, '-.D', ms=7 )
+                ax.legend((rects1[0], rects2[0]),('Diff-task5','Diff-task10'), prop={'size': 15}, loc=2)
 
                 ax.grid()
+
+        #plt.show()
+        figure = plt.gcf()
+        figure.set_size_inches([10,5.5])
+        pp.savefig()
+        plt.clf()
+        pp.close()
+
+
+    # TrendR solo
+        fig = plt.figure()
+        ax = fig.add_subplot(1,1,1)
+        # fig.subplots_adjust(top=0.9,left=0.1,right=0.95,hspace =0.15)
+        # ax.spines['top'].set_color('none')
+        # ax.spines['bottom'].set_color('none')
+        # ax.spines['left'].set_color('none')
+        # ax.spines['right'].set_color('none')
+        ax.tick_params(labelcolor='black', top=False, bottom=False, left=False, right=False)
+
+
+        filePrefix = 'trendsR-solo'
+        pp = PdfPages(folder + filePrefix + '.pdf')
+        title = '$U^N_{\small\mbox{SUM}}$: '+repr(70)+'\%' + ', $P_i^A$: '+repr(10**-4)
+        plt.title(title, fontsize=20)
+        # Label
+        ax.set_ylabel('$\Delta = \Phi_{k,j}^{\mbox{Chernoff}} / \Phi_{k,j}^{\mbox{CON}}$', fontsize=15)
+        ax.set_xlabel('Step j for $\Phi_{k, j}$', fontsize=20)
+        ax.set_yscale("log")
+
+        ax.set_xlim([0.5,6.5])
+        labels = [j for j in range(1, 7)]
+        print labels
+        ax.set_xticks(labels)
+        # ax.set_ylim([10**0, 10**10])
+
+
+        rects1=ax.plot(labels, diffResults5, '--o', ms=7)
+        labels = [j for j in range(1, 6)]
+        print labels
+        rects2=ax.plot(labels, diffResults10, '-.D', ms=7 )
+        ax.legend((rects1[0], rects2[0]),('Diff-task5','Diff-task10'), prop={'size': 15}, loc=2)
+        ax.axis('on')
+
+        ax.grid()
+
 
         #plt.show()
         figure = plt.gcf()
