@@ -153,13 +153,13 @@ class MissRateSimulator:
             e.updateDelta( delta )
         # update the workloads in the table
         while (delta):
+            self.h = self.findTheHighestWithWorkload()
             if self.h == -1:
                 # processor Idle
                 delta = 0
             elif delta >= self.statusTable[self.h][0]:
                 delta = delta - self.statusTable[self.h][0]
                 self.statusTable[ self.h ][ 0 ] = 0
-                self.h = self.findTheHighestWithWorkload()
             elif delta < self.statusTable[self.h][0]:
                 self.statusTable[ self.h ][ 0 ] -= delta
                 delta = 0
