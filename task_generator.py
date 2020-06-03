@@ -24,19 +24,6 @@ def UUniFast(n,U_avg):
         sumU=nextSumU
     USet.append(sumU)
 
-def UUniFast_Discard(n,U_avg):
-    while 1:
-        sumU=U_avg
-        for i in range(n-1):
-            nextSumU=sumU*math.pow(random.random(), 1/(n-i))
-            USet.append(sumU-nextSumU)
-            sumU=nextSumU
-        USet.append(sumU)
-
-        if max(USet) < 1:
-                break
-        del USet[:]
-
 def UniDist(n,U_min,U_max):
     for i in range(n-1):
         uBkt=random.uniform(U_min, U_max)
