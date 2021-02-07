@@ -1,3 +1,5 @@
+# further developed by Jannik Drögemüller, Mats Haring, Franziska Schmidt and Simon Koschel
+
 '''
 Author: Georg von der Brueggen
 '''
@@ -11,11 +13,11 @@ import sort_task_set
 def mixed_task_set(tasks, factor, rate):
     allTasks=[]
     for task in tasks:
-        task['abnormal_exe']=task['execution']*factor
-        task['prob']=rate
+        task.abnormal_exe = task.execution * factor
+        task.prob = rate
         allTasks.append(task)
-    return sort_task_set.sort(allTasks, 'period');
 
+    return sort_task_set.sort(allTasks, 'period')
 
 def hardtaskWCET(tasks, hardTaskWCETFactor, rate):
     allTasks=[]
@@ -30,9 +32,9 @@ def hardtaskWCET(tasks, hardTaskWCETFactor, rate):
     return sort_task_set.sort(allTasks, 'period');
 
 def taskGeneration(tasks, hardTasks, softTasks, hardTaskPercentage, hardTaskWCETFactor, softTaskWCETFactor):
-    #print len(tasks)
+    #print(len(tasks))
     numberOfHardTasks = (hardTaskPercentage / 100 * len(tasks))
-    #print numberOfHardTasks
+    #print(numberOfHardTasks)
     allTasks=[]
     for i in range(int(numberOfHardTasks)):
         pos=random.randint(0, len(tasks)-1)

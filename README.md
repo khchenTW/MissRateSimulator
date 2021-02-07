@@ -1,7 +1,8 @@
+
 # Event-based Miss Rate Simulator and Deadline Miss Rate
 
 # Environment:
-- Python 2.7
+- Python 3.6
 
 # Description of the adopted files from [1] and [2]:
 - EPST.py contains the analyses of the upper bound of the deadline misses.
@@ -13,25 +14,46 @@
 
 # The proposed methods and the simulator files:
 - experiments.py contains the main function to run the simulator and the evaluations.
-- simulator.py contains the class of the event-based simulator.
+- multiprocessor_simulator.py / simulator.py contains the class of the event-based simulator.
 
-# How to use? (10 tasks with 1 set)
-- "python experiements.py 0 10 1 0", Generate task sets. The configuration can be changed at the top of experiments.py.
-- "python experiements.py 1 10 1 0", Quickly get the expected deadline miss rates via the standard display.
-- "python experiements.py 2 10 1 0", Trigger the simulator accordingly and also evaluate the expected miss rates.
-- "python experiements.py 3 10 1 0", Shows the trends of \phi_{k,j}, where j in 1 to 10.
-- "python experiements.py 4 10 1 0", Shows the motivational example for the differences between the deadline miss rate and the probability deadline misses.
+# How to use?
+To run the simulator, run the following command from the repository:
 
-# Experimental setups in the paper:
-- All the results are statically stored in each ploter in "printer" folder
-- To obtain Figure 1, run "python experiements.py 4 2 1 0"
-- To obtain Figure 4, run "python experiements.py 3 5 5 0"
-- To obtain Figure 5, run "python experiements.py 2 2 30 0"
-- To obtain Figure 6, run "python experiements.py 1 10 100 0"
+```python3 experiments.py [mode] [# tasks] [tasksets_amount] [generationType] [part]```
 
-# Future work / Pending Feature for the simulator:
-- dynamic-priority scheduling policies
-- non-preemptive task systems
+## mode:
+0: generates tasksets using the other configuration parameters  
+2: starts a simulation with all combinations of the current configuration and saves the miss rate for each in the outputs folder  
+3: creates a plot for the current configuration  
+4: takes the current configuration and calculates the average amount of releases of all tasks for the generated taskset required, to reach the specified jobnumber  
+7: for testing purposes
+
+## \# tasks:
+desired number of tasks
+
+## tasksets_amount:
+desired number of tasksets
+
+## generationType:
+0: preset of possible periods (1, 2, 5, 10, 50, 100, 250 and 1000)  
+1: random periods between 1 and 100
+
+## part:
+allows saving different tasksets with identical configuration
+
+## in-file configurations:
+The scheduling method and processor type have to be set in experiments.py (lists 'schedulingMethods' and 'processorTypes').
+### processorType:
+0: single  
+1: partitioned  
+2: global  
+
+### scheduling:
+1: random priority  
+2: earliest deadline first  
+3: deadline-monotonic  
+4: rate-monotonic  
+
 
 # Reference
 - [1] K. H. Chen and J. J. Chen, "Probabilistic schedulability tests for uniprocessor fixed-priority scheduling under soft errors", 2017 12th IEEE International Symposium on Industrial Embedded Systems (SIES), Toulouse, France, 2017, pp. 1-8.

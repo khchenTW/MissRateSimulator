@@ -92,7 +92,7 @@ def ktda_s(task, higherPriorityTasks, ieq, s, mode=0):
                     probRes = ieq(task, higherPriorityTasks, fy, res.x)
                     selecteds = res.x
                 except TypeError:
-                    print "TypeError"
+                    print("TypeError")
                     probRes = 1
         elif ieq == SympyChernoff:
             ResList = []
@@ -131,7 +131,7 @@ def ktda_p(task, higherPriorityTasks, ieq, bound):
                 res = minimize_scalar(lambda x : ieq(task, higherPriorityTasks, fy, x), method='bounded', bounds=[0,bound])
                 probRes = ieq(task, higherPriorityTasks, fy, res.x)
             except TypeError:
-                print "TypeError"
+                print("TypeError")
                 probRes = 1
         elif ieq == Hoeffding_inequality:
             probRes = ieq(task, higherPriorityTasks, fy)
@@ -177,7 +177,7 @@ def ktda_k(task, higherPriorityTasks,  window, ieq, s):
                 probRes = ieq(task, higherPriorityTasks, fy, res.x)
                 selecteds = res.x
             except TypeError:
-                print "TypeError"
+                print("TypeError")
                 probRes = 1
         elif ieq == SympyChernoff:
             ResList = []
@@ -189,7 +189,7 @@ def ktda_k(task, higherPriorityTasks,  window, ieq, s):
         elif ieq == Bernstein_inequality:
             probRes = ieq(task, higherPriorityTasks, fy)
         else:
-            print ieq
+            print(ieq)
             raise "Error: You use a bound without implementation."
 
         if minP > probRes: #find out the minimum in k points
