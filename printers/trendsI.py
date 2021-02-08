@@ -58,7 +58,7 @@ try:
     set4,=ax.plot(x1, y4, 'bs', label='Set4')
     set5,=ax.plot(x1, y5, 'rx', label='Set5')
 except ValueError:
-    print "ValueError"
+    print("ValueError")
 figure = plt.gcf()
 figure.set_size_inches([10,6.5])
 

@@ -1,3 +1,5 @@
+# further developed by Jannik Drögemüller, Mats Haring, Franziska Schmidt and Simon Koschel
+
 ''' Implementation of the novel multinomial-based approach as detailed in Section 5.
 For the actual implementation the binomial case is considered.
 Furthermore, since the multinomial-based approach relies on convolution to merge
@@ -10,6 +12,7 @@ import math
 import numpy as np
 from operator import itemgetter, attrgetter
 from pkg_resources import get_distribution
+from decimal import Decimal
 
 import TDA
 
@@ -177,11 +180,11 @@ def convolution(tasks, prob_abnormal, probabilties, states):
     all_times = all_releases(tasks, deadline)
     distri = empty_distri()
     t = 0.0
-    print 'releases: ' + repr(len(releases))
-    print 'states: ' + repr(math.pow(2,len(releases)))
+    print('releases: ' + repr(len(releases)))
+    print('states: ' + repr(math.pow(2,len(releases))))
     while (t < deadline):
         i = 0
-        print len(distri)
+        print(len(distri))
         job = releases[0]
         while(job[0]['time']== t):
             distri = convolute(distri, job)
@@ -363,7 +366,7 @@ def get_distribution(task, time, prob_abnormal):
     for k in range(0, int(n) + 1, 1):
         pair={}
         pair['misses']=k
-        pair['prob']= (math.factorial(n)/(math.factorial(k)*math.factorial(n-k)))*math.pow(prob_abnormal, k)*math.pow((1-prob_abnormal),(n-k))
+        pair['prob']= (Decimal(math.factorial(n)) / (Decimal(math.factorial(k))*Decimal(math.factorial(n-k))))*Decimal(math.pow(prob_abnormal, k))*Decimal(math.pow((1-prob_abnormal),(n-k)))
         pair['execution']=k*task['abnormal_exe']+(n-k)*task['execution']
         distribution.append(pair)
     return distribution

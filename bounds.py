@@ -30,8 +30,8 @@ def SympyChernoff(task, higherPriorityTasks, t, s):
     #expr = sp.Mul(expr, sp.Pow(sp.Mul(sp.exp(sp.Mul(task['execution']-t*sp.ceiling(t/i['period']),x)),(1-task['prob']))+ sp.Mul(sp.exp(sp.Mul(task['abnormal_exe']-t*sp.ceiling(t/i['period']),x)),task['prob']), sp.ceiling(t/task['period'])))
     #mgf1 = sp.lambdify(x, expr)
     #dmgf2 = sp.lambdify(x, expr.diff(x))
-    #print expr
-    #print mgf1(np.float128(10))
+    #print(expr)
+    #print(mgf1(np.float128(10)))
 
     #version 2 - bisection for first derivative
     expr = 1.0
@@ -43,9 +43,9 @@ def SympyChernoff(task, higherPriorityTasks, t, s):
     mgf = sp.lambdify(x, expr)
     dmgf = sp.lambdify(x, expr.diff(x))
 
-    # print "---"
-    # print expr
-    # print mgf(np.float128(10))
+    # print("---")
+    # print(expr)
+    # print(mgf(np.float128(10)))
     # print
 
     # x0 is init guess
@@ -54,18 +54,18 @@ def SympyChernoff(task, higherPriorityTasks, t, s):
     x1 = x0 + np.float128(delta)
     m = np.float128(0)
     eps = np.float128("1e-50")
-    # print "guessing", x1
+    # print("guessing", x1)
     while(True):
         try:
             while dmgf(x1) < 0:
                 # find the upper bound of s
                 x1 = x1 + delta
-                # print "finding", x1
+                # print("finding", x1)
             break
         except Exception as valerr:
             # delta = delta/2
             # x1 = x0 + np.float128(delta)
-            # print valerr
+            # print(valerr)
             # bounder -=1
             # continue
             return [1.0, -1]
@@ -82,12 +82,12 @@ def SympyChernoff(task, higherPriorityTasks, t, s):
         else:
             x0 = m
         '''
-        print "x0:", x0
-        print "x1:", x1
-        print "x1-x0 div 2:", (x1 - x0)/2
-        print "dx0:", dmgf(np.float128(x0))
-        print "dx1:", dmgf(np.float128(x1))
-        print "m:", m
+        print("x0:", x0)
+        print("x1:", x1)
+        print("x1-x0 div 2:", (x1 - x0)/2)
+        print("dx0:", dmgf(np.float128(x0)))
+        print("dx1:", dmgf(np.float128(x1)))
+        print("m:", m)
         '''
     # We can also call bisection from the scipy.optimizer:
     # m= bisect(dmgf, np.float128(x0), np.float128(x1))
@@ -95,7 +95,7 @@ def SympyChernoff(task, higherPriorityTasks, t, s):
     start_time = time.time()
     prob = mgf(np.float128(m))
     if flag == 0:
-        print ("--- for one t %s seconds ---" % (time.time() - start_time))
+        print(("--- for one t %s seconds ---" % (time.time() - start_time)))
         flag = 1
 
     # newton method from scipy.optimier
@@ -105,19 +105,19 @@ def SympyChernoff(task, higherPriorityTasks, t, s):
     x0 = 0.05
     div = expr/expr.diff(x)
     X = newton(mgf, x0, fprime=dmgf, maxiter=100, tol=eps)
-    print X
+    print(X)
     prob = mgf(np.float128(X))
-    print prob
+    print(prob)
     '''
 
     # newton method manual implementation
     '''
     counter = 0
     X = x0
-    print "init", mgf(X)
+    print("init", mgf(X))
 
     for i in range(1, 100):
-        print X
+        print(X)
         nextGuess = X - div.subs(x, X)
         X = nextGuess
     if mgf(X) >= 1:
@@ -126,12 +126,12 @@ def SympyChernoff(task, higherPriorityTasks, t, s):
         try:
             X = X - np.float128(mgf(X)/dmgf(X))
         except ZeroDivisionError:
-            print "Error! - derivative zero for x = ", X
+            print("Error! - derivative zero for x = ", X)
         counter += 1
-        print X
-        #print mgf(X)
-    print "stop"
-    print "counter", counter
+        print(X)
+        #print(mgf(X))
+    print("stop")
+    print("counter", counter)
     prob = mgf(X)
     '''
 
@@ -144,7 +144,7 @@ def SympyChernoff(task, higherPriorityTasks, t, s):
     expr = expr / sp.exp(x*t)
     mgf = sp.lambdify(x, expr)
     #mgfprime = expr.diff(x)
-    #print mgfprime
+    #print(mgfprime)
     prob = mgf(np.float128(s))
     '''
 
@@ -188,19 +188,19 @@ def Chernoff_bounds(task, higherPriorityTasks, t, s):
             # if s > 72 and count == 7:
             #     raise Exception
         except Exception as inst:
-            print type(inst)
-            # print inst
-            print "b_prob:"+b_probstr
-            print "prob:"+probstr
-            print np.float128(str(mgf(i['execution'], i['abnormal_exe'], s, i['prob'])))
-            print mgf(i['execution'], i['abnormal_exe'], s, i['prob'])
-            print np.ceil(t/i['period'])
-            print np.float128(mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**int(np.ceil(t/i['period']))
-            print np.float128(b_probstr)*np.float128(mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**int(np.ceil(t/i['period']))
-            # print np.float128(mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**np.ceil(t/i['period'])
-            # print np.float128(probstr)*np.float128(mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**np.ceil(t/i['period'])
-            # print probstr
-            # print "taskidx:"+str(count)
+            print(type(inst))
+            # print(inst)
+            print("b_prob:"+b_probstr)
+            print("prob:"+probstr)
+            print(np.float128(str(mgf(i['execution'], i['abnormal_exe'], s, i['prob']))))
+            print(mgf(i['execution'], i['abnormal_exe'], s, i['prob']))
+            print(np.ceil(t/i['period']))
+            print(np.float128(mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**int(np.ceil(t/i['period'])))
+            print(np.float128(b_probstr)*np.float128(mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**int(np.ceil(t/i['period'])))
+            # print(np.float128(mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**np.ceil(t/i['period']))
+            # print(np.float128(probstr)*np.float128(mgf(i['execution'], i['abnormal_exe'], s, i['prob']))**np.ceil(t/i['period']))
+            # print(probstr)
+            # print("taskidx:"+str(count))
     probstr = str(np.float128(probstr) * np.float128(mgf(task['execution'], task['abnormal_exe'], s, task['prob']))**int(np.ceil(t/task['period'])))
 
     return np.float128(probstr)
