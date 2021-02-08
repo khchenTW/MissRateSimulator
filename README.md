@@ -4,6 +4,11 @@
 # Environment:
 - Python 3.6
 
+# Contributions of this paper:
+- conversion from Python 2.7 to 3.6
+- extended uni-processor to multiprocessor environment
+- implemented RP, EDF, RM and DM scheduling
+
 # Description of the adopted files from [1] and [2]:
 - EPST.py contains the analyses of the upper bound of the deadline misses.
 - bounds.py contains different bounds related to the Chernoff bound.
