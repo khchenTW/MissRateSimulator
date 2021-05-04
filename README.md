@@ -1,4 +1,4 @@
-# Event-based Miss Rate Simulator and Deadline Miss Rate
+# Event-based Deadline Miss Rate Simulator
 
 # Environment:
 - Python 2.7
