@@ -1,0 +1,11 @@
+__pycache__
+__pycache__/
+.vscode
+inputs
+txt
+figures
+inputs
+
+*.pyc
+
+*.py.bak

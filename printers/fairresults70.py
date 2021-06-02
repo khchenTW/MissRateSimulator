@@ -57,7 +57,7 @@ for i in range(4):
     lower_error.append(min(perfault[i]))
     upper_error.append(max(perfault[i]))
 asymmetric_error = (lower_error, upper_error)
-print asymmetric_error
+print(asymmetric_error)
 '''
 #the blue box
 boxprops = dict(linewidth=2, color='blue')
@@ -77,7 +77,7 @@ labels = ('$10^{-2}$','$10^{-4}$', '$10^{-6}$')
 try:
     ax.boxplot(perfault, 0, '', labels=labels, boxprops=boxprops, whiskerprops=whiskerprops, capprops=capprops)
 except ValueError:
-    print "ValueError"
+    print("ValueError")
 figure = plt.gcf()
 figure.set_size_inches([10,6.5])
 
