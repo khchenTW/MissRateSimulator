@@ -1,10 +1,9 @@
-
-# Event-based Miss Rate Simulator and Deadline Miss Rate
+# Event-based Deadline Miss Rate Simulator
 
 # Environment:
 - Python 3.6
 
-# Contributions of this paper:
+# Contributions of this patch:
 - conversion from Python 2.7 to 3.6
 - extended uni-processor to multiprocessor environment
 - implemented RP, EDF, RM and DM scheduling
